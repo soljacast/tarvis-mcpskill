@@ -14,7 +14,7 @@
     },
     {
       "id": 2,
-      "prompt": "here's the Q3 deck, throw it up on screen 2 — ~/decks/q3.pptx",
+      "prompt": "here's the Q3 deck, throw it up on screen 2 \u2014 ~/decks/q3.pptx",
       "expected_output": "The PowerPoint uploaded and cast on screen 2, paging like a deck.",
       "assertions": [
         "Reads the file and calls cast_file with base64 data",
@@ -61,6 +61,28 @@
         "Passes the message itself as content, not a URL",
         "Does not invent a screen number without checking device_status first, or asks which screen the lobby is"
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "I want to show my laptop screen on the tv",
+      "expected_output": "A screen-share link for the right screen, opened for the user, then confirmation once the cast goes live.",
+      "assertions": [
+        "Builds a /cast?source=screen_share link with a screen parameter",
+        "Opens the link on the user's machine or prints it clearly",
+        "Says a click is needed to pick the window",
+        "Polls cast_status and only confirms once that screen reports screen_share",
+        "Does not claim the share started before cast_status shows it"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "put my phone camera up on screen 2",
+      "expected_output": "A camera link for screen 2 handed over, then confirmation once it is live.",
+      "assertions": [
+        "Builds a /cast?source=camera&screen=2 link",
+        "Gives the user the link rather than claiming to open a camera itself",
+        "Polls cast_status until screen 2 reports camera"
+      ]
     }
   ],
   "trigger_set": {
@@ -72,7 +94,9 @@
       "what's on the screens right now",
       "stop casting",
       "zoom in a bit on the screen",
-      "display a message saying we're back at 2pm"
+      "display a message saying we're back at 2pm",
+      "share my screen on the tv",
+      "put my camera on screen 2"
     ],
     "should_not_trigger": [
       "deploy my app to production",

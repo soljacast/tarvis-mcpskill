@@ -48,6 +48,32 @@ what `device_status` reports back.
 
 Prefer these over re-casting. Re-casting reloads the content and loses position.
 
+## Camera and screen share: hand it to a person
+
+You have no camera and no screen of your own, and a browser will not start
+either without a deliberate click from the person sitting at it. There is no
+tool for these — build a link and hand it over:
+
+```
+<device>/cast?source=camera&screen=1
+<device>/cast?source=screen_share&screen=2
+```
+
+`<device>` is the same base URL you use for everything else. The page opens on
+the right card for the right screen; the person clicks once to go live.
+
+Open it for them when you can — `open <url>` on macOS, `xdg-open` on Linux,
+`start` on Windows — so the only thing left is the click. Otherwise print the
+link. For a phone camera, the link is what to put in front of them.
+
+Then **poll `cast_status`**: when they go live, that screen's `content_type`
+becomes `camera` or `screen_share`. That is how you know it worked; do not
+claim it did until you see it. If nothing changes after a while, ask rather
+than retry — they may still be choosing a window, or may have declined.
+
+Expect one thing you cannot remove: the screen-share picker always needs a
+click. Say so plainly instead of implying it will happen by itself.
+
 ## Web pages are special
 
 A `url` cast opens as a real fullscreen browser tab on the device, not an
