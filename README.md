@@ -16,14 +16,31 @@ connection config plus skills that teach an agent how to use the tools well.
 
 You'll be asked for two things:
 
-- **Device URL** — `http://soljacast.local`, or the device's IP or private
-  https address.
+- **Device URL** — use the device's https name if it has one (see below);
+  `http://soljacast.local` works too.
 - **Access token** — get one by opening `<device>/admin?mcp_login` in a browser,
   signing in as admin, and approving the connection. The device shows a code;
   paste it back where the terminal asks, and it becomes your token.
 
 The token is stored in your OS keychain, never in a settings file. Revoke it any
 time from **Manage → Settings → System → Connected agents** on the device.
+
+## Finding the right address
+
+Devices usually hold a Let's Encrypt certificate for a LAN name and a Tailscale
+name. Ask the device which to use — no token needed:
+
+```bash
+curl http://soljacast.local/api/agent/discover
+```
+
+It returns `addresses` ordered best-first (LAN https, Tailscale https, mDNS,
+then the raw IP) plus a `preferred` and a ready-made `mcp_url`. Try each in
+turn and keep the first that answers: the Tailscale name resolves only on the
+tailnet, the LAN name only on the same network.
+
+Use an https address when one works. Over plain HTTP the browser withholds the
+clipboard, so the approval page's **Copy code** button does nothing.
 
 ## Without the plugin
 
