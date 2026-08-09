@@ -56,11 +56,17 @@ tool for these — build a link and hand it over:
 
 ```
 <device>/cast?source=camera&screen=1
-<device>/cast?source=screen_share&screen=2
+<device>/cast?source=screen_share&screen=1
 ```
 
-`<device>` is the same base URL you use for everything else. The page opens on
-the right card for the right screen; the person clicks once to go live.
+`<device>` is the same base URL you use for everything else. The link resolves
+itself: if casting is admin-only on that device, or events are on without cast
+enabled, it forwards to the admin panel and asks for a password first. Either
+way the person lands on the right card for the right screen and clicks once.
+
+Check `device_status` for how many screens exist before naming one — plenty of
+devices have only screen 1, and a link to a screen that is not there wastes
+the person's time.
 
 Open it for them when you can — `open <url>` on macOS, `xdg-open` on Linux,
 `start` on Windows — so the only thing left is the click. Otherwise print the
