@@ -10,7 +10,7 @@ connection config plus skills that teach an agent how to use the tools well.
 ## Install
 
 ```
-/plugin marketplace add soljahub/tarvis-mcpskill
+/plugin marketplace add soljacast/tarvis-mcpskill
 /plugin install tarvis@tarvis-mcpskill
 ```
 

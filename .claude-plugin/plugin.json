@@ -4,13 +4,19 @@
   "version": "0.1.0",
   "description": "Cast to the screens on your Tarvis device, read and drive the web pages it shows, and run sandboxed coding agents on the box.",
   "author": {
-    "name": "Soljahub",
-    "url": "https://github.com/soljahub"
+    "name": "Soljacast",
+    "url": "https://github.com/soljacast"
   },
-  "homepage": "https://github.com/soljahub/tarvis-mcpskill",
-  "repository": "https://github.com/soljahub/tarvis-mcpskill",
+  "homepage": "https://github.com/soljacast/tarvis-mcpskill",
+  "repository": "https://github.com/soljacast/tarvis-mcpskill",
   "license": "MIT",
-  "keywords": ["tarvis", "soljacast", "casting", "screens", "mcp"],
+  "keywords": [
+    "tarvis",
+    "soljacast",
+    "casting",
+    "screens",
+    "mcp"
+  ],
   "userConfig": {
     "device_url": {
       "type": "string",

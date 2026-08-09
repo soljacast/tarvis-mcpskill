@@ -2,8 +2,8 @@
   "name": "tarvis-mcpskill",
   "description": "Plugins for Tarvis devices: cast to their screens, drive the pages they show, and run sandboxed coding agents on the box.",
   "owner": {
-    "name": "Soljahub",
-    "url": "https://github.com/soljahub"
+    "name": "Soljacast",
+    "url": "https://github.com/soljacast"
   },
   "plugins": [
     {
