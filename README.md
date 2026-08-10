@@ -15,7 +15,7 @@ Claude Code gets the skills, which teach an agent *how* to use the tools well.
 ### Any agent (paste this)
 
 ```
-Set up Tarvis from https://soljacast.com/SKILL.md
+Set up Tarvis from https://tarvisai.com/SKILL.md
 ```
 
 Works in Claude Code, Codex, Cursor - anything that can fetch a URL and run a
@@ -24,7 +24,7 @@ shell. The agent finds the device, pairs, configures itself and verifies.
 ### Terminal
 
 ```bash
-curl -fsSL https://soljacast.com/install.sh | bash
+curl -fsSL https://tarvisai.com/install.sh | bash
 ```
 
 Finds the device, opens the approval page, asks for the code, then writes config
