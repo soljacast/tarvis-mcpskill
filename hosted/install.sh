@@ -82,7 +82,7 @@ fi
 [ -z "$REQ_ID" ] && fail "exchange" "--code given without --id" "Re-run phase 1 to get a request id."
 TOKEN=$(curl -fsS --max-time 10 -X POST "$DEVICE/api/agent/auth/exchange" \
         -H "Content-Type: application/json" \
-        -d "{\"id\":$(jstr "$REQ_ID"),\"code\":$(jstr "$CODE")}" 2>/dev/null |
+        -d "{\"request_id\":$(jstr "$REQ_ID"),\"code\":$(jstr "$CODE")}" 2>/dev/null |
         "$PY" -c 'import json,sys;d=json.load(sys.stdin);print(d.get("token") or d.get("access_token") or "")' 2>/dev/null)
 [ -z "$TOKEN" ] && fail "exchange" "code rejected" \
   "Codes are single use and expire. Re-run phase 1 for a fresh request."
