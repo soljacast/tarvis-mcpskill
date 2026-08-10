@@ -37,12 +37,12 @@ jstr() { "$PY" -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$1"; }
 # ---------------------------------------------------------------- discovery
 discover() {
   if [ -n "$DEVICE" ]; then
-    curl -fsS --max-time 4 "$DEVICE/api/agent/discover" 2>/dev/null && return 0
+    curl -4 -fsS --max-time 8 "$DEVICE/api/agent/discover" 2>/dev/null && return 0
     return 1
   fi
   local n out
   for n in "" 1 2 3 4 5; do
-    out=$(curl -fsS --max-time 3 "http://soljacast$n.local/api/agent/discover" 2>/dev/null) || continue
+    out=$(curl -4 -fsS --max-time 6 "http://soljacast$n.local/api/agent/discover" 2>/dev/null) || continue
     printf '%s' "$out"; return 0
   done
   return 1
@@ -56,7 +56,7 @@ MCP_URL="$DEVICE/api/agent/v1/mcp"
 
 # ---------------------------------------------------------------- phase 1
 if [ -z "$CODE" ]; then
-  REQ=$(curl -fsS --max-time 10 -X POST "$DEVICE/api/agent/auth/request" \
+  REQ=$(curl -4 -fsS --max-time 10 -X POST "$DEVICE/api/agent/auth/request" \
         -H "Content-Type: application/json" \
         -d "{\"name\":$(jstr "$(hostname -s 2>/dev/null || echo agent)")}" 2>/dev/null) \
     || fail "request" "pairing request failed" "Check the device is reachable at $DEVICE"
@@ -80,7 +80,7 @@ fi
 
 # ---------------------------------------------------------------- phase 2
 [ -z "$REQ_ID" ] && fail "exchange" "--code given without --id" "Re-run phase 1 to get a request id."
-TOKEN=$(curl -fsS --max-time 10 -X POST "$DEVICE/api/agent/auth/exchange" \
+TOKEN=$(curl -4 -fsS --max-time 10 -X POST "$DEVICE/api/agent/auth/exchange" \
         -H "Content-Type: application/json" \
         -d "{\"request_id\":$(jstr "$REQ_ID"),\"code\":$(jstr "$CODE")}" 2>/dev/null |
         "$PY" -c 'import json,sys;d=json.load(sys.stdin);print(d.get("token") or d.get("access_token") or "")' 2>/dev/null)
@@ -132,7 +132,7 @@ if { [ -z "$CLIENT" ] || [ "$CLIENT" = "codex" ]; } && [ -d "$(dirname "$CODEX")
   chmod 600 "$CODEX" 2>/dev/null; note "codex"
 fi
 
-VERIFY=$(curl -fsS --max-time 10 -X POST "$MCP_URL" \
+VERIFY=$(curl -4 -fsS --max-time 10 -X POST "$MCP_URL" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' 2>/dev/null)
 TOOLS=$(printf '%s' "$VERIFY" | "$PY" -c 'import json,sys
