@@ -47,17 +47,41 @@ this for you.
 Use an https address when one works. Over plain HTTP the browser withholds the
 clipboard, so the approval page's **Copy code** button does nothing.
 
-## Without the plugin
+## Other clients
 
-Any MCP client can connect directly:
+The plugin format is Claude Code's. Everything here still works elsewhere, in
+two pieces.
+
+**The tools** are a remote MCP server on the device, so any MCP client can use
+them — Claude Desktop, ChatGPT desktop, Cursor, Codex, opencode. Point it at
+the device with a bearer header:
+
+```
+url:     https://<device>/api/agent/v1/mcp
+header:  Authorization: Bearer sca_...
+```
+
+In Claude Code that is:
 
 ```bash
 claude mcp add --transport http tarvis \
-  http://soljacast.local/api/agent/v1/mcp \
+  https://<device>/api/agent/v1/mcp \
   --header "Authorization: Bearer sca_..."
 ```
 
-You get the tools but not the skills.
+Elsewhere, add it wherever that app keeps custom MCP servers or connectors.
+
+**The skills** follow the open [Agent Skills](https://agentskills.io) format,
+so they are portable too — but each client installs them its own way. Copy a
+`skills/<name>/` directory into your client's skills location, or package one
+for upload:
+
+```bash
+package_skill.py skills/find-device ./dist    # -> find-device.skill
+```
+
+Without the skills you still get every tool; you lose the workflow knowledge
+that tells an agent which one to reach for and when to hand back to a human.
 
 ## What's in here
 
