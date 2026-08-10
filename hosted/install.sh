@@ -45,11 +45,30 @@ discover() {
     out=$(curl -4 -fsS --max-time 6 "http://soljacast$n.local/api/agent/discover" 2>/dev/null) || continue
     printf '%s' "$out"; return 0
   done
-  return 1
+  sweep_subnet
+}
+
+# mDNS is blocked on plenty of guest and corporate networks. Fall back to
+# probing the local /24 in parallel; the device answers /api/agent/discover.
+sweep_subnet() {
+  local me prefix hit tmp i
+  me=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null ||
+       ip -4 -o addr show scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -1)
+  [ -z "$me" ] && return 1
+  prefix="${me%.*}"
+  tmp=$(mktemp) || return 1
+  for i in $(seq 1 254); do
+    ( curl -4 -fsS --max-time 2 "http://$prefix.$i/api/agent/discover" 2>/dev/null |
+        head -c 2000 | grep -q '"mcp_url"' && printf '%s\n' "$prefix.$i" >> "$tmp" ) &
+  done
+  wait
+  hit=$(head -1 "$tmp" 2>/dev/null); rm -f "$tmp"
+  [ -z "$hit" ] && return 1
+  curl -4 -fsS --max-time 5 "http://$hit/api/agent/discover" 2>/dev/null
 }
 
 INFO=$(discover) || fail "discover" "no device found" \
-  "Ask the user for the address on the TV screen, then re-run with --device http://<addr>"
+  "Tried mDNS and swept the local subnet. Ask the user for the address on the TV screen, then re-run with --device http://<addr>"
 PREFERRED=$(printf '%s' "$INFO" | jget preferred)
 [ -n "$PREFERRED" ] && DEVICE="${PREFERRED%/}"
 MCP_URL="$DEVICE/api/agent/v1/mcp"
@@ -87,8 +106,9 @@ TOKEN=$(curl -4 -fsS --max-time 10 -X POST "$DEVICE/api/agent/auth/exchange" \
 [ -z "$TOKEN" ] && fail "exchange" "code rejected" \
   "Codes are single use and expire. Re-run phase 1 for a fresh request."
 
-CONFIGURED=""
+CONFIGURED=""; SKIPPED=""
 note() { CONFIGURED="$CONFIGURED${CONFIGURED:+,}$(jstr "$1")"; }
+skip() { SKIPPED="$SKIPPED${SKIPPED:+,}$(jstr "$1")"; }
 
 write_json_cfg() { # <label> <path>
   local dir; dir=$(dirname "$2")
@@ -116,9 +136,14 @@ case "$(uname -s)" in
 esac
 
 if [ -z "$CLIENT" ] || [ "$CLIENT" = "claude-code" ]; then
-  command -v claude >/dev/null 2>&1 &&
-    claude mcp add --transport http tarvis "$MCP_URL" \
-      --header "Authorization: Bearer $TOKEN" >/dev/null 2>&1 && note "claude-code"
+  if command -v claude >/dev/null 2>&1; then
+    if claude mcp add --transport http tarvis "$MCP_URL" \
+         --header "Authorization: Bearer $TOKEN" >/dev/null 2>&1; then
+      note "claude-code"
+    else
+      claude mcp list 2>/dev/null | grep -q tarvis && skip "claude-code"
+    fi
+  fi
 fi
 [ -z "$CLIENT" ] || [ "$CLIENT" = "claude-desktop" ] && write_json_cfg "claude-desktop" "$CD_CFG"
 [ -z "$CLIENT" ] || [ "$CLIENT" = "cursor" ] && write_json_cfg "cursor" "$HOME/.cursor/mcp.json"
@@ -130,6 +155,8 @@ if { [ -z "$CLIENT" ] || [ "$CLIENT" = "codex" ]; } && [ -d "$(dirname "$CODEX")
   printf '\n[mcp_servers.tarvis]\ncommand = "npx"\nargs = ["-y", "mcp-remote", "%s", "--header", "Authorization: Bearer %s"]\n' \
     "$MCP_URL" "$TOKEN" >> "$CODEX"
   chmod 600 "$CODEX" 2>/dev/null; note "codex"
+elif grep -q '^\[mcp_servers.tarvis\]' "$CODEX" 2>/dev/null; then
+  skip "codex"
 fi
 
 VERIFY=$(curl -4 -fsS --max-time 10 -X POST "$MCP_URL" \
@@ -145,4 +172,7 @@ if [ -z "$JSON_ONLY" ] && [ -r /dev/tty ]; then
   printf '\n  Connected to %s\n  %s tools available, configured: %s\n  Fully quit and reopen your client (a reload is not enough).\n\n' \
     "$DEVICE" "$TOOLS" "$(printf '%s' "$CONFIGURED" | tr -d '\"')" > /dev/tty
 fi
-emit "{\"phase\":\"done\",\"status\":\"ok\",\"device\":$(jstr "$DEVICE"),\"mcp_url\":$(jstr "$MCP_URL"),\"tools\":$TOOLS,\"configured\":[$CONFIGURED],\"next\":\"Fully quit and reopen the client; a reload does not pick up new MCP servers.\"}"
+if [ -z "$CONFIGURED" ] && [ -z "$SKIPPED" ]; then
+  emit "{\"phase\":\"configure\",\"status\":\"error\",\"error\":\"no supported client found\",\"hint\":\"Add it by hand: url $MCP_URL with header 'Authorization: Bearer <token>'. The token was not printed; re-run to mint a new one.\",\"mcp_url\":$(jstr "$MCP_URL")}" 1
+fi
+emit "{\"phase\":\"done\",\"status\":\"ok\",\"device\":$(jstr "$DEVICE"),\"mcp_url\":$(jstr "$MCP_URL"),\"tools\":$TOOLS,\"configured\":[$CONFIGURED],\"already_configured\":[$SKIPPED],\"next\":\"Fully quit and reopen the client; a reload does not pick up new MCP servers.\"}"
