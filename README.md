@@ -9,12 +9,18 @@ connection config plus skills that teach an agent how to use the tools well.
 
 ## Install
 
+Pick your client. All of them talk to the same MCP server on the device; only
+Claude Code gets the skills, which teach an agent *how* to use the tools well.
+
+### Claude Code
+
 ```
 /plugin marketplace add soljacast/tarvis-mcpskill
 /plugin install tarvis@tarvis-mcpskill
 ```
 
-You'll be asked for two things:
+Two commands because the first registers the repo as a marketplace and the
+second installs the plugin from it. You'll be asked for two things:
 
 - **Device URL** — use the device's https name if it has one (see below);
   `http://soljacast.local` works too.
@@ -24,6 +30,95 @@ You'll be asked for two things:
 
 The token is stored in your OS keychain, never in a settings file. Revoke it any
 time from **Manage → Settings → System → Connected agents** on the device.
+
+### Claude Desktop, Cursor, Zed, Cline
+
+These take an MCP config file rather than a plugin. If the client supports a
+remote HTTP server directly:
+
+```json
+{
+  "mcpServers": {
+    "tarvis": {
+      "type": "http",
+      "url": "http://soljacast.local/api/agent/v1/mcp",
+      "headers": { "Authorization": "Bearer sca_YOUR_TOKEN" }
+    }
+  }
+}
+```
+
+If it only supports stdio (Claude Desktop's `claude_desktop_config.json` does),
+bridge it with `mcp-remote`:
+
+```json
+{
+  "mcpServers": {
+    "tarvis": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "http://soljacast.local/api/agent/v1/mcp",
+        "--header", "Authorization:${AUTH_HEADER}"
+      ],
+      "env": { "AUTH_HEADER": "Bearer sca_YOUR_TOKEN" }
+    }
+  }
+}
+```
+
+The token goes in `env`, not inline in `args`, so it stays out of process
+listings. Restart the client after editing the config.
+
+Get the token the same way as above: open `<device>/admin?mcp_login` in a
+browser, approve, and exchange the code. You get the tools but not the skills.
+
+### Codex CLI
+
+Codex reads `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.tarvis]
+command = "npx"
+args = [
+  "-y", "mcp-remote",
+  "http://soljacast.local/api/agent/v1/mcp",
+  "--header", "Authorization: Bearer sca_YOUR_TOKEN",
+]
+```
+
+### ChatGPT — not supported
+
+Custom MCP connectors live behind **Settings → Apps → Advanced → Developer
+mode** (Plus/Pro/Business/Enterprise/Edu, web-first). Two things rule this
+device out, and neither is a config problem:
+
+- Auth is **OAuth or none**. A static `Authorization: Bearer` header is not an
+  option, and that is how device tokens work.
+- The server must be a **public HTTPS endpoint**. OpenAI's servers cannot reach
+  a device on your network. Their Secure MCP Tunnel exists for this case.
+
+So a Tarvis device only becomes reachable from ChatGPT if it is published on a
+public HTTPS address *and* fronted by something that speaks OAuth.
+
+### Anything else that speaks MCP
+
+The endpoint is plain Streamable HTTP MCP:
+
+```
+POST <device>/api/agent/v1/mcp
+Authorization: Bearer sca_YOUR_TOKEN
+```
+
+`GET <device>/api/agent/discover` needs no token and returns every address the
+device answers on, plus `mcp_url`.
+
+### What will not work
+
+**Cloud-hosted clients** — ChatGPT, claude.ai web connectors — connect from the
+vendor's servers, not your machine, so they cannot reach a device on your LAN at
+all. No configuration changes that. The device must be published on a public
+HTTPS address first, which is what its `.solja.one` name is for.
 
 ## Finding the right address
 
@@ -47,34 +142,13 @@ this for you.
 Use an https address when one works. Over plain HTTP the browser withholds the
 clipboard, so the approval page's **Copy code** button does nothing.
 
-## Other clients
+## Portable skills
 
-The plugin format is Claude Code's. Everything here still works elsewhere, in
-two pieces.
-
-**The tools** are a remote MCP server on the device, so any MCP client can use
-them — Claude Desktop, ChatGPT desktop, Cursor, Codex, opencode. Point it at
-the device with a bearer header:
-
-```
-url:     https://<device>/api/agent/v1/mcp
-header:  Authorization: Bearer sca_...
-```
-
-In Claude Code that is:
-
-```bash
-claude mcp add --transport http tarvis \
-  https://<device>/api/agent/v1/mcp \
-  --header "Authorization: Bearer sca_..."
-```
-
-Elsewhere, add it wherever that app keeps custom MCP servers or connectors.
-
-**The skills** follow the open [Agent Skills](https://agentskills.io) format,
-so they are portable too — but each client installs them its own way. Copy a
-`skills/<name>/` directory into your client's skills location, or package one
-for upload:
+The tools are just the MCP server — see [Install](#install) for per-client
+config. The **skills** are separate, and follow the open
+[Agent Skills](https://agentskills.io) format, so they port too; each client
+installs them its own way. Copy a `skills/<name>/` directory into your client's
+skills location, or package one for upload:
 
 ```bash
 package_skill.py skills/find-device ./dist    # -> find-device.skill
