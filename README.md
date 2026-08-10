@@ -12,6 +12,25 @@ connection config plus skills that teach an agent how to use the tools well.
 Pick your client. All of them talk to the same MCP server on the device; only
 Claude Code gets the skills, which teach an agent *how* to use the tools well.
 
+### Any agent (paste this)
+
+```
+Set up Tarvis from https://soljacast.com/SKILL.md
+```
+
+Works in Claude Code, Codex, Cursor - anything that can fetch a URL and run a
+shell. The agent finds the device, pairs, configures itself and verifies.
+
+### Terminal
+
+```bash
+curl -fsSL https://soljacast.com/install.sh | bash
+```
+
+Finds the device, opens the approval page, asks for the code, then writes config
+for whichever clients you have installed. Add `--client claude-desktop` to
+target just one.
+
 ### Claude Code
 
 ```

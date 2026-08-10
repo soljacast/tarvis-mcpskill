@@ -8,13 +8,14 @@
 # ok | approval_pending | error.
 set -uo pipefail
 
-DEVICE=""; REQ_ID=""; CODE=""; CLIENT=""
+DEVICE=""; REQ_ID=""; CODE=""; CLIENT=""; JSON_ONLY=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --device) DEVICE="${2%/}"; shift 2 ;;
     --id)     REQ_ID="$2"; shift 2 ;;
     --code)   CODE="$2"; shift 2 ;;
     --client) CLIENT="$2"; shift 2 ;;
+    --json)   JSON_ONLY=1; shift ;;
     *) shift ;;
   esac
 done
@@ -64,7 +65,17 @@ if [ -z "$CODE" ]; then
   [ -z "$RID" ] && fail "request" "device returned no request id" "Update the device firmware."
   (command -v open >/dev/null && open "$URL" >/dev/null 2>&1) ||
     (command -v xdg-open >/dev/null && xdg-open "$URL" >/dev/null 2>&1) || true
+  # A person at a terminal gets a prompt; an agent gets JSON and calls back.
+  if [ -z "$JSON_ONLY" ] && [ -r /dev/tty ]; then
+    printf '\n  Open this and approve, signing in with the device admin password:\n\n    %s\n\n' "$URL" > /dev/tty
+    printf '  The device shows a short code. Type it here.\n  Code: ' > /dev/tty
+    read -r CODE < /dev/tty
+    if [ -n "$CODE" ]; then REQ_ID="$RID"; else
+      emit "{\"phase\":\"approval\",\"status\":\"error\",\"error\":\"no code entered\",\"hint\":\"Re-run to try again.\"}" 1
+    fi
+  else
   emit "{\"phase\":\"approval\",\"status\":\"approval_pending\",\"device\":$(jstr "$DEVICE"),\"request_id\":$(jstr "$RID"),\"approve_url\":$(jstr "$URL"),\"instructions\":\"Open approve_url, sign in as admin, approve, then re-run with --id and the code shown.\",\"retry\":{\"command\":$(jstr "$0 --device $DEVICE --id $RID --code <CODE>")}}"
+  fi
 fi
 
 # ---------------------------------------------------------------- phase 2
@@ -130,4 +141,8 @@ except Exception: print(0)' 2>/dev/null)
 [ "${TOOLS:-0}" -eq 0 ] && fail "verify" "server returned no tools" \
   "Token may be wrong. Re-run phase 1 for a fresh request."
 
+if [ -z "$JSON_ONLY" ] && [ -r /dev/tty ]; then
+  printf '\n  Connected to %s\n  %s tools available, configured: %s\n  Fully quit and reopen your client (a reload is not enough).\n\n' \
+    "$DEVICE" "$TOOLS" "$(printf '%s' "$CONFIGURED" | tr -d '\"')" > /dev/tty
+fi
 emit "{\"phase\":\"done\",\"status\":\"ok\",\"device\":$(jstr "$DEVICE"),\"mcp_url\":$(jstr "$MCP_URL"),\"tools\":$TOOLS,\"configured\":[$CONFIGURED],\"next\":\"Fully quit and reopen the client; a reload does not pick up new MCP servers.\"}"

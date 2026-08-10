@@ -13,9 +13,11 @@ for any of this.
 
 ```bash
 curl -fsSL https://soljacast.com/install.sh -o /tmp/tarvis-install.sh
-chmod +x /tmp/tarvis-install.sh
-/tmp/tarvis-install.sh
+bash /tmp/tarvis-install.sh --json
 ```
+
+`--json` keeps it non-interactive, which is what you want: without it the script
+prompts a human for the code on the terminal instead of handing control back.
 
 Every run prints one JSON object with `phase` and `status`. Read it; do not guess
 from exit codes.
