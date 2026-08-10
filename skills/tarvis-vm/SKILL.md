@@ -1,7 +1,6 @@
 ---
 name: tarvis-vm
-description: Run a coding agent inside a sandboxed micro-VM on a Tarvis device — clone a repo, start Claude Code or another agent on the box, read its output, and send it input. Use when the user wants work running on the device itself rather than on their laptop.
-when_to_use: Triggers on "start a coding agent on the box", "run this in a VM on the device", "spin up a sandbox and clone X", "what is the agent on the device doing", "reply to the agent session". Only available when the token was approved with VM access.
+description: Run a coding agent inside a sandboxed micro-VM on a Tarvis device — clone a repo, start Claude Code or another agent on the box, read its output, and send it input. Use when the user wants work running on the device itself rather than on their laptop. Triggers on "start a coding agent on the box", "run this in a VM on the device", "spin up a sandbox and clone X", "what is the agent on the device doing", "reply to the agent session". Only available when the token was approved with VM access.
 ---
 
 # Sandboxed coding agents on the device

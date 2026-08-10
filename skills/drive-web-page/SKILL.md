@@ -1,7 +1,6 @@
 ---
 name: drive-web-page
-description: Read and control a web page showing on a Tarvis device's screen — click buttons, fill fields, navigate to a section, search a site, work through a form. Use when the user wants you to interact with a casted page rather than just display it, or asks what a page currently shows.
-when_to_use: Triggers on "click the X on the screen", "search for Y on that page", "scroll to the Z section", "log into this site on the TV", "what does the dashboard say right now", "fill in that form". Requires a url cast to already be running, or start one first.
+description: Read and control a web page showing on a Tarvis device's screen — click buttons, fill fields, navigate to a section, search a site, work through a form. Use when the user wants you to interact with a casted page rather than just display it, or asks what a page currently shows. Triggers on "click the X on the screen", "search for Y on that page", "scroll to the Z section", "log into this site on the TV", "what does the dashboard say right now", "fill in that form". Requires a url cast to already be running, or start one first.
 ---
 
 # Drive a web page on the screen

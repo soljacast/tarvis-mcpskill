@@ -5,7 +5,7 @@
       "id": 1,
       "prompt": "put our status dashboard at https://status.example.com on the big screen",
       "expected_output": "The dashboard cast to a screen as a live web page, with a confirmation naming the screen.",
-      "assertions": [
+      "expectations": [
         "Calls cast_content with content_type \"url\"",
         "Passes the URL unchanged as content",
         "Reports which screen the cast landed on",
@@ -16,7 +16,7 @@
       "id": 2,
       "prompt": "here's the Q3 deck, throw it up on screen 2 \u2014 ~/decks/q3.pptx",
       "expected_output": "The PowerPoint uploaded and cast on screen 2, paging like a deck.",
-      "assertions": [
+      "expectations": [
         "Reads the file and calls cast_file with base64 data",
         "Passes screen 2",
         "Does not attempt to cast a local filesystem path as a url",
@@ -27,7 +27,7 @@
       "id": 3,
       "prompt": "next slide",
       "expected_output": "The casted deck advances one page.",
-      "assertions": [
+      "expectations": [
         "Calls cast_page with direction \"next\"",
         "Does not re-cast the deck",
         "Does not ask which screen when only one cast is active"
@@ -37,7 +37,7 @@
       "id": 4,
       "prompt": "the text on screen is tiny, can you make it bigger",
       "expected_output": "The cast zoomed in a step.",
-      "assertions": [
+      "expectations": [
         "Calls cast_zoom with direction \"in\"",
         "Does not re-cast the content"
       ]
@@ -46,7 +46,7 @@
       "id": 5,
       "prompt": "clear the screens, we're done",
       "expected_output": "All screens stopped and returned to standby.",
-      "assertions": [
+      "expectations": [
         "Calls cast_stop",
         "Omits the screen argument, or stops every screen",
         "Confirms the screens are clear"
@@ -56,7 +56,7 @@
       "id": 6,
       "prompt": "show a countdown that says 'Doors open at 7pm' on the lobby screen",
       "expected_output": "The text cast to a screen.",
-      "assertions": [
+      "expectations": [
         "Calls cast_content with content_type \"text\" or \"html\"",
         "Passes the message itself as content, not a URL",
         "Does not invent a screen number without checking device_status first, or asks which screen the lobby is"
@@ -66,7 +66,7 @@
       "id": 7,
       "prompt": "I want to show my laptop screen on the tv",
       "expected_output": "A screen-share link for the right screen, opened for the user, then confirmation once the cast goes live.",
-      "assertions": [
+      "expectations": [
         "Builds a /cast?source=screen_share link with a screen parameter",
         "Opens the link on the user's machine or prints it clearly",
         "Says a click is needed to pick the window",
@@ -78,7 +78,7 @@
       "id": 8,
       "prompt": "put my phone camera up on screen 2",
       "expected_output": "A camera link for screen 2 handed over, then confirmation once it is live.",
-      "assertions": [
+      "expectations": [
         "Builds a /cast?source=camera&screen=2 link",
         "Gives the user the link rather than claiming to open a camera itself",
         "Polls cast_status until screen 2 reports camera"

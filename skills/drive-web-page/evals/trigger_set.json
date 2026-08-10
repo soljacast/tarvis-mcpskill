@@ -1,0 +1,54 @@
+[
+  {
+    "query": "click the accept button on the page that's showing",
+    "should_trigger": true
+  },
+  {
+    "query": "scroll to the pricing section on the casted site",
+    "should_trigger": true
+  },
+  {
+    "query": "fill in the search box with 'quarterly report'",
+    "should_trigger": true
+  },
+  {
+    "query": "what's currently on the dashboard we cast",
+    "should_trigger": true
+  },
+  {
+    "query": "navigate to the settings tab on that page",
+    "should_trigger": true
+  },
+  {
+    "query": "press next on the wizard showing on screen 2",
+    "should_trigger": true
+  },
+  {
+    "query": "cast this pdf to the tv",
+    "should_trigger": false
+  },
+  {
+    "query": "play a video on the big screen",
+    "should_trigger": false
+  },
+  {
+    "query": "open example.com in my local browser",
+    "should_trigger": false
+  },
+  {
+    "query": "start a coding agent on the device",
+    "should_trigger": false
+  },
+  {
+    "query": "write a scraper for this site",
+    "should_trigger": false
+  },
+  {
+    "query": "refactor this component",
+    "should_trigger": false
+  },
+  {
+    "query": "stop casting",
+    "should_trigger": false
+  }
+]

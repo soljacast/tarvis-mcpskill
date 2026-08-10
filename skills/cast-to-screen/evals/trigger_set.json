@@ -1,0 +1,70 @@
+[
+  {
+    "query": "cast this pdf to the tv",
+    "should_trigger": true
+  },
+  {
+    "query": "show the grafana board on screen 1",
+    "should_trigger": true
+  },
+  {
+    "query": "play this youtube clip on the big screen",
+    "should_trigger": true
+  },
+  {
+    "query": "put these photos up in the lobby",
+    "should_trigger": true
+  },
+  {
+    "query": "what's on the screens right now",
+    "should_trigger": true
+  },
+  {
+    "query": "stop casting",
+    "should_trigger": true
+  },
+  {
+    "query": "zoom in a bit on the screen",
+    "should_trigger": true
+  },
+  {
+    "query": "display a message saying we're back at 2pm",
+    "should_trigger": true
+  },
+  {
+    "query": "share my screen on the tv",
+    "should_trigger": true
+  },
+  {
+    "query": "put my camera on screen 2",
+    "should_trigger": true
+  },
+  {
+    "query": "deploy my app to production",
+    "should_trigger": false
+  },
+  {
+    "query": "write a unit test for this function",
+    "should_trigger": false
+  },
+  {
+    "query": "take a screenshot of my laptop",
+    "should_trigger": false
+  },
+  {
+    "query": "open this page in my browser",
+    "should_trigger": false
+  },
+  {
+    "query": "start a coding agent on the device",
+    "should_trigger": false
+  },
+  {
+    "query": "click the sign-in button on the casted page",
+    "should_trigger": false
+  },
+  {
+    "query": "what's the weather",
+    "should_trigger": false
+  }
+]

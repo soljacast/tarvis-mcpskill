@@ -1,7 +1,6 @@
 ---
 name: cast-to-screen
-description: Put content on a physical screen attached to a Tarvis device — a web page, dashboard, video, YouTube clip, image, PDF, slide deck, document, audio, or a block of text. Use when the user asks to show, cast, display, put up, or play something on a screen, TV, monitor, or "the big screen".
-when_to_use: Triggers on "show X on the screen", "cast this deck", "put the dashboard up", "play this video on the TV", "display these photos". Also use to stop a cast, scroll or zoom what's showing, or page through a document.
+description: Put content on a physical screen attached to a Tarvis device — a web page, dashboard, video, YouTube clip, image, PDF, slide deck, document, audio, or a block of text. Use when the user asks to show, cast, display, put up, or play something on a screen, TV, monitor, or "the big screen". Triggers on "show X on the screen", "cast this deck", "put the dashboard up", "play this video on the TV", "display these photos". Also use to stop a cast, scroll or zoom what's showing, or page through a document.
 ---
 
 # Cast to a screen

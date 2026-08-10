@@ -5,7 +5,7 @@
       "id": 1,
       "prompt": "start claude code on the device against git@github.com:acme/api.git and have it look at the failing tests",
       "expected_output": "A VM session started with the repo cloned over https, and the instruction relayed to the agent.",
-      "assertions": [
+      "expectations": [
         "Rewrites the SSH remote to an https:// URL before calling coding_agent_start",
         "Explains why SSH cannot be used from the VM",
         "Passes a session name",
@@ -16,7 +16,7 @@
       "id": 2,
       "prompt": "what's the agent doing",
       "expected_output": "The session's current output, and whether it is working or waiting for input.",
-      "assertions": [
+      "expectations": [
         "Calls coding_agent_read or coding_agent_wait",
         "Distinguishes finished from awaiting-input rather than reporting only 'settled'",
         "Does not claim progress that is absent from the output"
@@ -26,7 +26,7 @@
       "id": 3,
       "prompt": "it's asking me to pick an option, tell it 2",
       "expected_output": "The answer sent into the session.",
-      "assertions": [
+      "expectations": [
         "Calls coding_agent_send with the answer",
         "Reads the output afterwards to confirm it was accepted"
       ]
@@ -35,7 +35,7 @@
       "id": 4,
       "prompt": "show me the VM's desktop on the tv",
       "expected_output": "Explains the VM desktop is not castable through these tools and offers what is.",
-      "assertions": [
+      "expectations": [
         "Does not claim to cast the VM desktop",
         "Suggests casting something the agent produces, such as a served URL or a written file"
       ]
