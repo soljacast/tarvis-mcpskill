@@ -1,0 +1,42 @@
+[
+  {
+    "query": "find my device",
+    "should_trigger": true
+  },
+  {
+    "query": "what is the soljacast address",
+    "should_trigger": true
+  },
+  {
+    "query": "connect to the casting box",
+    "should_trigger": true
+  },
+  {
+    "query": "the device url stopped working",
+    "should_trigger": true
+  },
+  {
+    "query": "is there a tarvis device on this network",
+    "should_trigger": true
+  },
+  {
+    "query": "cast this pdf to the tv",
+    "should_trigger": false
+  },
+  {
+    "query": "click the button on the casted page",
+    "should_trigger": false
+  },
+  {
+    "query": "what is my laptop's ip",
+    "should_trigger": false
+  },
+  {
+    "query": "scan the network for open ports",
+    "should_trigger": false
+  },
+  {
+    "query": "start a coding agent on the device",
+    "should_trigger": false
+  }
+]

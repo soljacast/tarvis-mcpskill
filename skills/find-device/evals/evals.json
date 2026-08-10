@@ -1,0 +1,52 @@
+{
+  "skill_name": "find-device",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "find my soljacast device on this network",
+      "expected_output": "The device located over mDNS and its preferred https address reported.",
+      "expectations": [
+        "Requests http://soljacast.local/api/agent/discover first",
+        "Falls back to the numbered soljacast1..19 names if that does not answer",
+        "Reports the preferred address from the response rather than an invented one",
+        "Does not ask the user for an IP before trying discovery"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "the device url I saved stopped working",
+      "expected_output": "Rediscovery attempted and the current address reported, or a clear reason it cannot be found.",
+      "expectations": [
+        "Re-runs discovery rather than only reporting the old address is down",
+        "If nothing answers, says mDNS may be blocked or the network differs, and asks for an IP",
+        "Does not retry the same failing address repeatedly"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "there are two boxes in the office, which one is which",
+      "expected_output": "Both devices listed with their hostnames so the user can choose.",
+      "expectations": [
+        "Probes past soljacast.local into the numbered names",
+        "Lists each responding host with its device hostname",
+        "Asks the user to pick rather than choosing silently"
+      ]
+    }
+  ],
+  "trigger_set": {
+    "should_trigger": [
+      "find my device",
+      "what is the soljacast address",
+      "connect to the casting box",
+      "the device url stopped working",
+      "is there a tarvis device on this network"
+    ],
+    "should_not_trigger": [
+      "cast this pdf to the tv",
+      "click the button on the casted page",
+      "what is my laptop's ip",
+      "scan the network for open ports",
+      "start a coding agent on the device"
+    ]
+  }
+}

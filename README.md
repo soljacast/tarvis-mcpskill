@@ -27,17 +27,22 @@ time from **Manage → Settings → System → Connected agents** on the device.
 
 ## Finding the right address
 
-Devices usually hold a Let's Encrypt certificate for a LAN name and a Tailscale
-name. Ask the device which to use — no token needed:
+You do not need to know an IP. Devices publish themselves over mDNS:
 
 ```bash
 curl http://soljacast.local/api/agent/discover
 ```
 
-It returns `addresses` ordered best-first (LAN https, Tailscale https, mDNS,
-then the raw IP) plus a `preferred` and a ready-made `mcp_url`. Try each in
-turn and keep the first that answers: the Tailscale name resolves only on the
-tailnet, the LAN name only on the same network.
+Several boxes on one network cannot share a name, so each takes the first free
+one at boot — `soljacast`, then `soljacast1`, up to `soljacast19`. Probe the
+numbered names if the first does not answer. `.local` resolution is built into
+macOS, Linux and Windows 10+, so plain HTTP requests work everywhere.
+
+The reply lists every address best-first (LAN https, Tailscale https, mDNS,
+raw IP) plus a `preferred` and a ready-made `mcp_url`. Try each in turn and
+keep the first that answers: the Tailscale name resolves only on the tailnet,
+the LAN name only on the same network. The `find-device` skill does all of
+this for you.
 
 Use an https address when one works. Over plain HTTP the browser withholds the
 clipboard, so the approval page's **Copy code** button does nothing.
@@ -61,6 +66,7 @@ You get the tools but not the skills.
 | `cast-to-screen` | Showing web pages, video, decks, images, text and audio on a screen; controlling what's showing |
 | `drive-web-page` | Reading a casted page's accessibility tree and clicking, typing and navigating in it |
 | `tarvis-vm` | Sandboxed Gondolin VMs and herdr coding-agent sessions (needs VM access on the token) |
+| `find-device` | Locating a device on the network over mDNS and picking the right address |
 
 ## Development
 
