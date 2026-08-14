@@ -1,0 +1,50 @@
+[
+    {
+        "query": "run chatwoot on my tarvis box",
+        "should_trigger": true
+    },
+    {
+        "query": "self host bitwarden on the device",
+        "should_trigger": true
+    },
+    {
+        "query": "watch this site for changes and show them on the tv every hour",
+        "should_trigger": true
+    },
+    {
+        "query": "schedule a morning summary on the screen at 7:30",
+        "should_trigger": true
+    },
+    {
+        "query": "what apps are running on my box",
+        "should_trigger": true
+    },
+    {
+        "query": "store my api key on the device for the task",
+        "should_trigger": true
+    },
+    {
+        "query": "pause the apartment watcher task",
+        "should_trigger": true
+    },
+    {
+        "query": "cast this youtube video to the tv",
+        "should_trigger": false
+    },
+    {
+        "query": "start claude code on the box against our repo",
+        "should_trigger": false
+    },
+    {
+        "query": "click the login button on the casted page",
+        "should_trigger": false
+    },
+    {
+        "query": "deploy my app to vercel",
+        "should_trigger": false
+    },
+    {
+        "query": "find my tarvis device on the network",
+        "should_trigger": false
+    }
+]

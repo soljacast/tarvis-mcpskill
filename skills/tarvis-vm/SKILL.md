@@ -44,6 +44,23 @@ Each session name maps to a persistent workspace at
 Logins and installed tools survive a restart of the same name — reuse the name
 to resume, pick a new one for isolated work.
 
+## Showing a dev server on a screen
+
+Pass `expose_port` to `coding_agent_start` with the guest port the app will
+listen on (e.g. 3010 for `next dev -p 3010`). The reply includes a device LAN
+preview URL; once the agent has the server running, cast that URL with the
+**cast-to-screen** skill and the live app is on the TV. The preview URL stays
+stable across sleep/wake, so the loop is: talk to the session from your
+laptop, the app hot-reloads on the screen. The dev server must bind 0.0.0.0
+inside the VM, not 127.0.0.1.
+
+## Private repos
+
+The VM has no credentials. Don't put tokens in the start call — start the
+session without `repo`, then have the agent run `gh auth login` inside: the
+device-code prompt comes back through `read`, the user approves it in their
+own browser, and the agent clones after. The login persists in the workspace.
+
 ## Sessions belong to the device
 
 Disconnect whenever you like: the session keeps running on the box, and any

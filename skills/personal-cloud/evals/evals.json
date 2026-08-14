@@ -1,0 +1,65 @@
+{
+    "skill_name": "personal-cloud",
+    "evals": [
+        {
+            "id": 1,
+            "prompt": "run vaultwarden on my box",
+            "expected_output": "The app installed from the Coolify template, with its URL and generated credentials relayed to the user.",
+            "expectations": [
+                "Calls device_status first to see what already runs",
+                "Uses app_install with the template slug rather than writing compose by hand",
+                "Relays the returned URL and one-time credentials to the user immediately",
+                "Does not declare failure on a slow first start without checking app_list or app_logs"
+            ]
+        },
+        {
+            "id": 2,
+            "prompt": "self-host this compose file on the device",
+            "expected_output": "The compose submitted through app_install, with sanitizer rejections explained if any.",
+            "expectations": [
+                "Passes the compose to app_install rather than trying to reach the container engine",
+                "On a sanitizer rejection, explains which key was refused and adapts the compose instead of retrying verbatim",
+                "Knows published ports are reallocated by the device and reports the actual URL"
+            ]
+        },
+        {
+            "id": 3,
+            "prompt": "watch this apartment listings page every 30 minutes and show new ones on the tv",
+            "expected_output": "A scheduled task created with an interval schedule and a prompt that casts a summary to the screen.",
+            "expectations": [
+                "Checks a configured agent with a headless command exists, or configures one with the user",
+                "Uses schedule=interval with interval_minutes, not a bespoke loop",
+                "Writes a task prompt that includes casting the result to a screen",
+                "Tests with task_run_now and checks task_runs before reporting success"
+            ]
+        },
+        {
+            "id": 4,
+            "prompt": "the task needs my listings-site password",
+            "expected_output": "The secret stored by name and referenced from the task, never echoed back.",
+            "expectations": [
+                "Uses secret_set and references the name in the task's secrets",
+                "Never prints or reads back the secret value",
+                "Explains the value is write-only on the device"
+            ]
+        },
+        {
+            "id": 5,
+            "prompt": "remove the uptime kuma app and its data",
+            "expected_output": "Removal only after the user confirms the data loss.",
+            "expectations": [
+                "Confirms purge with the user before calling app_remove with purge=true",
+                "Explains data is kept when purge is false"
+            ]
+        },
+        {
+            "id": 6,
+            "prompt": "what is my box running right now",
+            "expected_output": "A summary of apps, scheduled tasks and coding sessions from the inventory.",
+            "expectations": [
+                "Calls device_status and reads apps, tasks and coding_sessions from it",
+                "Reports paused tasks (enabled=false) and last run outcomes, not just names"
+            ]
+        }
+    ]
+}

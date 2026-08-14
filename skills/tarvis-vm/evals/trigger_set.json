@@ -1,46 +1,58 @@
 [
-  {
-    "query": "spin up a sandbox on the box and clone our repo",
-    "should_trigger": true
-  },
-  {
-    "query": "run a coding agent on the device",
-    "should_trigger": true
-  },
-  {
-    "query": "what is the session on the device up to",
-    "should_trigger": true
-  },
-  {
-    "query": "send 'yes' to the agent running on the box",
-    "should_trigger": true
-  },
-  {
-    "query": "list the VM sessions",
-    "should_trigger": true
-  },
-  {
-    "query": "cast this deck to the screen",
-    "should_trigger": false
-  },
-  {
-    "query": "click the button on the casted page",
-    "should_trigger": false
-  },
-  {
-    "query": "run the tests here on my laptop",
-    "should_trigger": false
-  },
-  {
-    "query": "create a docker container locally",
-    "should_trigger": false
-  },
-  {
-    "query": "ssh into the device",
-    "should_trigger": false
-  },
-  {
-    "query": "give me a shell on the box",
-    "should_trigger": false
-  }
+    {
+        "query": "spin up a sandbox on the box and clone our repo",
+        "should_trigger": true
+    },
+    {
+        "query": "run a coding agent on the device",
+        "should_trigger": true
+    },
+    {
+        "query": "what is the session on the device up to",
+        "should_trigger": true
+    },
+    {
+        "query": "send 'yes' to the agent running on the box",
+        "should_trigger": true
+    },
+    {
+        "query": "list the VM sessions",
+        "should_trigger": true
+    },
+    {
+        "query": "cast this deck to the screen",
+        "should_trigger": false
+    },
+    {
+        "query": "click the button on the casted page",
+        "should_trigger": false
+    },
+    {
+        "query": "run the tests here on my laptop",
+        "should_trigger": false
+    },
+    {
+        "query": "create a docker container locally",
+        "should_trigger": false
+    },
+    {
+        "query": "ssh into the device",
+        "should_trigger": false
+    },
+    {
+        "query": "give me a shell on the box",
+        "should_trigger": false
+    },
+    {
+        "query": "run the dev app on the box and show it on the tv while I code",
+        "should_trigger": true
+    },
+    {
+        "query": "put the session to sleep until tomorrow",
+        "should_trigger": true
+    },
+    {
+        "query": "install uptime kuma on the device",
+        "should_trigger": false
+    }
 ]

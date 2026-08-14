@@ -1,61 +1,91 @@
 {
-  "skill_name": "tarvis-vm",
-  "evals": [
-    {
-      "id": 1,
-      "prompt": "start claude code on the device against git@github.com:acme/api.git and have it look at the failing tests",
-      "expected_output": "A VM session started with the repo cloned over https, and the instruction relayed to the agent.",
-      "expectations": [
-        "Rewrites the SSH remote to an https:// URL before calling coding_agent_start",
-        "Explains why SSH cannot be used from the VM",
-        "Passes a session name",
-        "Waits or reads before assuming the agent is ready"
-      ]
-    },
-    {
-      "id": 2,
-      "prompt": "what's the agent doing",
-      "expected_output": "The session's current output, and whether it is working or waiting for input.",
-      "expectations": [
-        "Calls coding_agent_read or coding_agent_wait",
-        "Distinguishes finished from awaiting-input rather than reporting only 'settled'",
-        "Does not claim progress that is absent from the output"
-      ]
-    },
-    {
-      "id": 3,
-      "prompt": "it's asking me to pick an option, tell it 2",
-      "expected_output": "The answer sent into the session.",
-      "expectations": [
-        "Calls coding_agent_send with the answer",
-        "Reads the output afterwards to confirm it was accepted"
-      ]
-    },
-    {
-      "id": 4,
-      "prompt": "show me the VM's desktop on the tv",
-      "expected_output": "Explains the VM desktop is not castable through these tools and offers what is.",
-      "expectations": [
-        "Does not claim to cast the VM desktop",
-        "Suggests casting something the agent produces, such as a served URL or a written file"
-      ]
-    }
-  ],
-  "trigger_set": {
-    "should_trigger": [
-      "spin up a sandbox on the box and clone our repo",
-      "run a coding agent on the device",
-      "what is the session on the device up to",
-      "send 'yes' to the agent running on the box",
-      "list the VM sessions"
+    "skill_name": "tarvis-vm",
+    "evals": [
+        {
+            "id": 1,
+            "prompt": "start claude code on the device against git@github.com:acme/api.git and have it look at the failing tests",
+            "expected_output": "A VM session started with the repo cloned over https, and the instruction relayed to the agent.",
+            "expectations": [
+                "Rewrites the SSH remote to an https:// URL before calling coding_agent_start",
+                "Explains why SSH cannot be used from the VM",
+                "Passes a session name",
+                "Waits or reads before assuming the agent is ready"
+            ]
+        },
+        {
+            "id": 2,
+            "prompt": "what's the agent doing",
+            "expected_output": "The session's current output, and whether it is working or waiting for input.",
+            "expectations": [
+                "Calls coding_agent_read or coding_agent_wait",
+                "Distinguishes finished from awaiting-input rather than reporting only 'settled'",
+                "Does not claim progress that is absent from the output"
+            ]
+        },
+        {
+            "id": 3,
+            "prompt": "it's asking me to pick an option, tell it 2",
+            "expected_output": "The answer sent into the session.",
+            "expectations": [
+                "Calls coding_agent_send with the answer",
+                "Reads the output afterwards to confirm it was accepted"
+            ]
+        },
+        {
+            "id": 4,
+            "prompt": "show me the VM's desktop on the tv",
+            "expected_output": "Explains the VM desktop is not castable through these tools and offers what is.",
+            "expectations": [
+                "Does not claim to cast the VM desktop",
+                "Suggests casting something the agent produces, such as a served URL or a written file"
+            ]
+        },
+        {
+            "id": 5,
+            "prompt": "run the dev server on the box and put the app on the tv so I can code from here",
+            "expected_output": "A session started with expose_port, the dev server launched inside, and the preview URL casted to the screen.",
+            "expectations": [
+                "Passes expose_port matching the app's dev port to coding_agent_start",
+                "Instructs the agent to bind the dev server to 0.0.0.0",
+                "Casts the preview URL from the start reply, not a guest-only address",
+                "Verifies the page renders (screenshot or status) before reporting done"
+            ]
+        },
+        {
+            "id": 6,
+            "prompt": "the repo is private",
+            "expected_output": "Session started without repo; gh device-flow login relayed to the user; agent clones after.",
+            "expectations": [
+                "Does not ask the user for a token or put credentials in the start call",
+                "Relays the gh auth device code through coding_agent_read for the user to approve",
+                "Has the agent clone only after the login succeeds"
+            ]
+        },
+        {
+            "id": 7,
+            "prompt": "pause that session for now, I'll come back tomorrow",
+            "expected_output": "The session slept, with the reassurance that its workspace and conversation are kept.",
+            "expectations": [
+                "Calls coding_agent_sleep rather than removing the workspace",
+                "Explains wake (or send) resumes the same conversation from any paired agent"
+            ]
+        }
     ],
-    "should_not_trigger": [
-      "cast this deck to the screen",
-      "click the button on the casted page",
-      "run the tests here on my laptop",
-      "create a docker container locally",
-      "ssh into the device",
-      "give me a shell on the box"
-    ]
-  }
+    "trigger_set": {
+        "should_trigger": [
+            "spin up a sandbox on the box and clone our repo",
+            "run a coding agent on the device",
+            "what is the session on the device up to",
+            "send 'yes' to the agent running on the box",
+            "list the VM sessions"
+        ],
+        "should_not_trigger": [
+            "cast this deck to the screen",
+            "click the button on the casted page",
+            "run the tests here on my laptop",
+            "create a docker container locally",
+            "ssh into the device",
+            "give me a shell on the box"
+        ]
+    }
 }
