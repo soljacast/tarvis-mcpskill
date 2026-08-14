@@ -54,6 +54,17 @@ stable across sleep/wake, so the loop is: talk to the session from your
 laptop, the app hot-reloads on the screen. The dev server must bind 0.0.0.0
 inside the VM, not 127.0.0.1.
 
+## An isolated browser for the agent
+
+Pass `browser: true` (or `"obscura"`) to give the session its own in-VM
+browser: Obscura, a lightweight CDP-compatible engine that persists in the
+workspace. The agent connects Playwright over CDP to it and verifies its own
+dev server — click flows, DOM assertions, screenshots — without touching any
+browser outside the sandbox. Pass `"chromium"` when pixel-accurate rendering
+matters; it is much heavier and reinstalls on each wake. Each session's
+browser is fully isolated: cookies and logins never leak between sessions or
+to the device.
+
 ## Private repos
 
 The VM has no credentials. Don't put tokens in the start call — start the

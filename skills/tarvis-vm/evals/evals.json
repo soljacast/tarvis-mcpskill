@@ -69,6 +69,26 @@
                 "Calls coding_agent_sleep rather than removing the workspace",
                 "Explains wake (or send) resumes the same conversation from any paired agent"
             ]
+        },
+        {
+            "id": 8,
+            "prompt": "give the agent a browser so it can test the flows it builds",
+            "expected_output": "Session started with browser enabled, defaulting to the lightweight engine.",
+            "expectations": [
+                "Passes browser=true (obscura) rather than installing chromium by default",
+                "Chooses chromium only when the user asks for pixel-accurate visual review",
+                "Explains the browser lives inside the VM, isolated per session"
+            ]
+        },
+        {
+            "id": 9,
+            "prompt": "connect my github so sessions can clone private repos and open PRs",
+            "expected_output": "github_connect code and URL relayed; status polled until connected.",
+            "expectations": [
+                "Calls github_connect and relays user_code + verification_url to the user",
+                "Polls github_status rather than assuming approval",
+                "Never asks the user to paste a token"
+            ]
         }
     ],
     "trigger_set": {
