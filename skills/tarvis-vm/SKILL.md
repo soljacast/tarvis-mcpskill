@@ -65,6 +65,16 @@ matters; it is much heavier and reinstalls on each wake. Each session's
 browser is fully isolated: cookies and logins never leak between sessions or
 to the device.
 
+## One login per device
+
+Agent logins live in the session workspace, so the same session never asks
+twice. To make every future session start signed in: configure the agent with
+`login_paths` (for Claude Code: `.claude/.credentials.json` and
+`.claude.json`), have the user log in once in any session, then call
+`coding_agent_save_login` with that session's name. The files land on the
+encrypted data volume and seed each new workspace. A revoked or expired login
+is fixed the same way: log in once, save again.
+
 ## Private repos
 
 The VM has no credentials. Don't put tokens in the start call — start the

@@ -89,6 +89,16 @@
                 "Polls github_status rather than assuming approval",
                 "Never asks the user to paste a token"
             ]
+        },
+        {
+            "id": 10,
+            "prompt": "do I have to sign claude in every time I start a session on the box?",
+            "expected_output": "No: one login per device via the saved-login seed; explains the save flow.",
+            "expectations": [
+                "Explains logins persist per workspace automatically",
+                "Offers coding_agent_save_login after a first sign-in so new sessions start authenticated",
+                "Configures login_paths on the agent when missing"
+            ]
         }
     ],
     "trigger_set": {
