@@ -17,12 +17,18 @@ security model. Nothing here gives you a shell on the box.
 
 - `coding_agent_configure` — register an agent once: its run command, its
   install command, and the credential env vars it needs. Stored 0600 on the
-  device. Do this before the first `start` for a given agent.
+  device. Do this before the first `start` for a given agent. Optional fields:
+  `headless` (a non-interactive command template for scheduled tasks, with
+  `{prompt}` replaced per run) and `resume` (a flag appended on wake so the
+  agent restores its conversation — `--continue` for Claude Code).
 - `coding_agent_start` — create a workspace, clone a repo, and launch the agent.
-- `coding_sessions` — list the sessions this pack created.
+- `coding_sessions` — list sessions, including saved ones that survived a
+  device restart.
 - `coding_agent_read` — read a session's recent output.
 - `coding_agent_send` — type into a session (answering a prompt, giving an instruction).
 - `coding_agent_wait` — block until a session settles or a timeout expires.
+- `coding_agent_sleep` / `coding_agent_wake` — park a session's VM to free RAM
+  and bring it back later.
 
 ## Starting a session
 
@@ -37,6 +43,20 @@ Each session name maps to a persistent workspace at
 `~/.soljacast/gondolin/workspaces/<name>`, mounted at `/workspace` inside the VM.
 Logins and installed tools survive a restart of the same name — reuse the name
 to resume, pick a new one for isolated work.
+
+## Sessions belong to the device
+
+Disconnect whenever you like: the session keeps running on the box, and any
+later paired agent finds it by name in `coding_sessions` and reattaches with
+`read`/`send`. This is how a heavy Claude Code session runs on the device
+instead of a struggling laptop.
+
+Idle sessions sleep automatically after ~30 minutes of unchanged output
+(`sleep_after_min` on start overrides; `-1` never). A sleeping session costs no
+RAM; `coding_agent_wake` — or simply `coding_agent_send` — relaunches it in the
+same workspace with the agent's `resume` flag, restoring the conversation.
+Pass `persistent: true` on start to have the device relaunch the session after
+a reboot; otherwise it is listed as `interrupted` until something wakes it.
 
 ## Reading and replying
 
