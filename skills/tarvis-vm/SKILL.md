@@ -75,12 +75,20 @@ twice. To make every future session start signed in: configure the agent with
 encrypted data volume and seed each new workspace. A revoked or expired login
 is fixed the same way: log in once, save again.
 
-## Private repos
+## Private repos and git hosts
 
-The VM has no credentials. Don't put tokens in the start call — start the
-session without `repo`, then have the agent run `gh auth login` inside: the
-device-code prompt comes back through `read`, the user approves it in their
-own browser, and the agent clones after. The login persists in the workspace.
+Connect the device once and every VM gets working git:
+
+- GitHub: `github_connect` returns a code and URL — relay both, the user
+  approves in their browser, poll `git_status` until connected.
+- Any other host (GitLab, Bitbucket, Gitea, self-hosted): the user adds a
+  personal access token in the device admin panel. Never ask for a token in
+  chat.
+
+Inside each VM, `~/.config/tarvis/git-hosts.json` lists the connected hosts;
+the matching CLI (gh, glab, tea) is installed and token env vars are set, so
+pick the provider's own commands for PRs or merge requests. Private repos
+then clone straight from the `repo` argument of `coding_agent_start`.
 
 ## Sessions belong to the device
 

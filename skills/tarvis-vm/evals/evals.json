@@ -53,12 +53,12 @@
         },
         {
             "id": 6,
-            "prompt": "the repo is private",
-            "expected_output": "Session started without repo; gh device-flow login relayed to the user; agent clones after.",
+            "prompt": "clone our gitlab repo on the box and open a merge request when done",
+            "expected_output": "Session with the repo cloning via the connected host; MR via glab; PAT never requested in chat.",
             "expectations": [
-                "Does not ask the user for a token or put credentials in the start call",
-                "Relays the gh auth device code through coding_agent_read for the user to approve",
-                "Has the agent clone only after the login succeeds"
+                "Checks git_status (or in-VM git-hosts.json) for the connected host first",
+                "Directs the user to the admin panel for a PAT on a non-GitHub host, never asks for the token in chat",
+                "Uses the provider's own CLI (glab mr create) rather than gh"
             ]
         },
         {
