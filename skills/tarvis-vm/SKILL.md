@@ -47,9 +47,13 @@ to resume, pick a new one for isolated work.
 ## Showing a dev server on a screen
 
 Pass `expose_port` to `coding_agent_start` with the guest port the app will
-listen on (e.g. 3010 for `next dev -p 3010`). The reply includes a device LAN
-preview URL; once the agent has the server running, cast that URL with the
-**cast-to-screen** skill and the live app is on the TV. The preview URL stays
+listen on (e.g. 3010 for `next dev -p 3010`). The reply includes a preview
+URL (`preview_url`, the LAN https name `https://<session>.<device>.solja.one`,
+plus `preview_tailscale_url` when the device has Tailscale enabled — same
+LAN-vs-elsewhere rule as every device address); once the agent has the server
+running, cast that URL with the **cast-to-screen** skill and the live app is
+on the TV. Only a session whose name is a plain lowercase label (letters,
+digits, hyphens) gets an https name; other names fall back to `http://<ip>:<port>`. The preview URL stays
 stable across sleep/wake, so the loop is: talk to the session from your
 laptop, the app hot-reloads on the screen. The dev server must bind 0.0.0.0
 inside the VM, not 127.0.0.1.

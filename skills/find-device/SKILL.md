@@ -81,3 +81,8 @@ misbehave over plain http.
 The mDNS name keeps working after a device is given an https domain; the two
 are independent. Use mDNS to find the box, then its own answer to decide how to
 talk to it.
+
+Everything the box hosts follows the same pair: apps and coding sessions
+report `url` (`https://<app>.<name>.example.net`, LAN) and `tailscale_url`
+(`https://<app>.<name>.ts.example.net`) — same rule as the device addresses
+above, so pick by where the caller is.

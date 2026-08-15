@@ -14,19 +14,32 @@ installed; if `app_*`/`task_*` tools are missing, say so.
 box is already running — hosted apps with URLs, scheduled tasks with their
 last outcome, coding sessions — so you have context before adding anything.
 
+## Two URLs per service
+
+Every app and session comes with `url` (the LAN name, e.g.
+`https://plane.sea.solja.one`) and, when the owner enabled Tailscale for the
+device, `tailscale_url` (`https://plane.sea.ts.solja.one`). Both are real
+https names on the device's own certificate; the device routes them to the
+right port itself. The rule never changes: **on the same Wi-Fi as the box use
+`url`; anywhere else use `tailscale_url`.** Hand the user whichever matches
+where they are, or both. Until the device's domain is active (fresh pairing,
+no cert yet) the same fields carry plain `http://<ip>:<port>` links instead —
+still correct, just not https.
+
 ## Hosted apps
 
 Apps are docker-compose projects run by the device (podman underneath). You
 never touch the container engine: you hand over a template or compose, the
-device sanitizes it, allocates LAN ports, generates passwords, and runs it
-with restart-on-boot persistence. Data lives on the encrypted data partition.
+device sanitizes it, allocates ports, generates passwords, and runs it
+with restart-on-boot persistence. The app's `name` becomes its subdomain
+(`<name>.<device>.solja.one`), so keep it a short lowercase label. Data lives on the encrypted data partition.
 
 - `app_catalog` — curated slugs installable offline. Any other slug from
   Coolify's service directory (github.com/coollabsio/coolify,
   templates/compose) works too when the device has internet.
 - `app_install` — `name` plus either `template` (a slug) or `compose` (YAML
-  you write). Returns the URL and any generated credentials — relay those to
-  the user immediately, they are shown once.
+  you write). Returns `url` / `tailscale_url` and any generated credentials —
+  relay those to the user immediately, they are shown once.
 - `app_list` / `app_start` / `app_stop` / `app_logs` / `app_remove`.
 
 Writing compose yourself: images only (no `build:`), no privileged containers,
@@ -54,7 +67,8 @@ working and let something else watch it:
     as a monitor there — the device then watches itself 24/7.
   - Otherwise `task_create` a scheduled check: a headless agent that curls
     the app URL and casts/alerts only on failure. Every X minutes, zero cost
-    while healthy, survives reboots.
+    while healthy, survives reboots. On-device checks use `url` (the box is
+    on its own LAN); anything watching from elsewhere needs `tailscale_url`.
 
 Rule of thumb: your attention ends when the app is up; the device's attention
 is what watches it stay up.

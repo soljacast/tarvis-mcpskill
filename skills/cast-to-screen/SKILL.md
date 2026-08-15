@@ -58,8 +58,11 @@ tool for these — build a link and hand it over:
 <device>/cast?source=screen_share&screen=1
 ```
 
-`<device>` is the same base URL you use for everything else. The link resolves
-itself: if casting is admin-only on that device, or events are on without cast
+`<device>` is the same base URL you use for everything else — for a phone or
+laptop on the box's Wi-Fi that is the LAN https name (`device_status` returns it
+as `url`); for someone elsewhere it is `tailscale_url`, which only works with
+Tailscale running. Camera and screen sharing need https, so prefer those names
+over a plain IP. The link resolves itself: if casting is admin-only on that device, or events are on without cast
 enabled, it forwards to the admin panel and asks for a password first. Either
 way the person lands on the right card for the right screen and clicks once.
 
