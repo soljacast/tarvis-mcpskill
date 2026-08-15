@@ -40,6 +40,25 @@ can return with a `start_error` while layers are still coming down. Check
 `app_list` and read `app_logs` before declaring failure; a retry of
 `app_start` resumes from cached layers.
 
+### Monitor what you host — in the background, never by stalling
+
+Do not sit in a foreground loop polling an app you just installed; keep
+working and let something else watch it:
+
+- **Bring-up:** run the wait in a background process on your side (a shell
+  loop curling the app URL until 200, or your harness's background/monitor
+  facility) and report to the user when it flips. Your main loop stays free.
+- **Ongoing health:** make monitoring durable on the device itself, not in
+  your session. Two device-native options:
+  - If Uptime Kuma (or similar) is hosted on the box, add the new app's URL
+    as a monitor there — the device then watches itself 24/7.
+  - Otherwise `task_create` a scheduled check: a headless agent that curls
+    the app URL and casts/alerts only on failure. Every X minutes, zero cost
+    while healthy, survives reboots.
+
+Rule of thumb: your attention ends when the app is up; the device's attention
+is what watches it stay up.
+
 ## Scheduled tasks
 
 A task runs a headless coding agent inside a sandboxed VM on a schedule. The
