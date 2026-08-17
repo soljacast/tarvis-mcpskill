@@ -109,6 +109,18 @@ than retry — they may still be choosing a window, or may have declined.
 Expect one thing you cannot remove: the screen-share picker always needs a
 click. Say so plainly instead of implying it will happen by itself.
 
+## Never put a loading error on the TV
+
+When you have just started the thing you are about to show — a hosted app, a
+dev server in a coding session — **poll its URL until it answers 200, then
+cast it.** An app installs in seconds but takes a minute or two to boot, and a
+dev server takes longer; casting the moment you have a URL puts a 502 or a
+"not running" page on a screen in front of people.
+
+Say what you are waiting for while you wait, and cast on the first success.
+If it never comes up, read `app_logs` (or the session's output) and say what
+the error was — do not cast the failure and let the room read it.
+
 ## Web pages are special
 
 A `url` cast opens as a real fullscreen browser tab on the device, not an

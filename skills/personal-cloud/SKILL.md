@@ -43,7 +43,10 @@ keep it a short lowercase label. Data lives on the encrypted data partition.
   templates/compose) works too when the device has internet.
 - `app_install` — `name` plus either `template` (a slug) or `compose` (YAML
   you write). Returns `url` / `tailscale_url` and any generated credentials —
-  relay those to the user immediately, they are shown once.
+  relay those to the user immediately, they are shown once. **The URL works
+  before the app does**: install returns as soon as the containers are up,
+  while the app itself may still be migrating a database. Poll the URL until
+  it answers 200 before you cast it to a screen or hand it over.
 - `app_list` / `app_start` / `app_stop` / `app_logs` / `app_remove`.
 
 Writing compose yourself: images only (no `build:`), no privileged containers,

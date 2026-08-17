@@ -92,6 +92,12 @@ stable across sleep/wake, so the loop is: talk to the session from your
 laptop, the app hot-reloads on the screen. The dev server must bind 0.0.0.0
 inside the VM, not 127.0.0.1.
 
+**Wait for it to answer before casting.** The URL exists from the moment the
+session starts; the server behind it does not. Installing dependencies and
+booting a dev server takes minutes on a device — poll the preview URL until it
+returns 200 and cast then, or the screen shows a gateway error to whoever is
+watching.
+
 ## An isolated browser for the agent
 
 Pass `browser: true` to give the session its own in-VM browser: Obscura, a
