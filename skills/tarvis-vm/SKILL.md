@@ -5,13 +5,17 @@ description: Run a coding agent inside a sandboxed micro-VM on a Tarvis device �
 
 # Sandboxed coding agents on the device
 
-The device can run coding agents inside [Gondolin](https://github.com/earendil-works/gondolin)
-micro-VMs, multiplexed by herdr. These tools appear only when the token was
-approved with **Allow VMs & coding agents** and the device has both binaries
-installed. If `coding_*` tools are missing, say so — don't try to work around it.
+The device runs coding agents inside microVMs — podman with the `krun`
+(libkrun) runtime, one VM per session, each with its own guest kernel. These
+tools appear only when the token was approved with **Allow VMs & coding
+agents** and the runtime is installed. If `coding_*` tools are missing, say so
+— don't try to work around it.
 
 **Agents always run inside the VM, never on the device host.** That is the whole
 security model. Nothing here gives you a shell on the box.
+
+A session costs roughly 350 MB of device RAM while running and nothing while
+asleep, so several can coexist on an 8 GB box.
 
 ## The tools
 
@@ -26,48 +30,77 @@ security model. Nothing here gives you a shell on the box.
   device restart.
 - `coding_agent_read` — read a session's recent output.
 - `coding_agent_send` — type into a session (answering a prompt, giving an instruction).
-- `coding_agent_wait` — block until a session settles or a timeout expires.
+- `coding_agent_wait` — block until a session reaches a status. **Both `target`
+  and `status` are required**; `status: "idle"` is the usual one (returns once
+  the screen stops changing), `"working"` returns as soon as output starts.
 - `coding_agent_sleep` / `coding_agent_wake` — park a session's VM to free RAM
   and bring it back later.
+- `coding_workspace_remove` — delete a session's workspace for good.
+
+**Two different parameter names, and they are not interchangeable.** `read`,
+`send` and `wait` take `target`. `sleep`, `wake`, `save_login` and
+`workspace_remove` take `name`. Passing the wrong one fails with an unhelpful
+`no session named ''`.
 
 ## Starting a session
 
 Give it a `name` (the workspace key), the configured `agent`, and optionally a
-`repo` and `branch`.
+`repo` and `branch`. Expect roughly 35 seconds from call to a live prompt —
+plus a few minutes the very first time on a device, which pulls the ~165 MB
+runtime image.
 
 **The repo must be an `https://` URL.** The VM's network allows HTTP and TLS but
 not general egress, so `git@github.com:...` will not connect. Rewrite SSH remotes
 to https before passing them.
 
-Each session name maps to a persistent workspace at
-`~/.soljacast/gondolin/workspaces/<name>`, mounted at `/workspace` inside the VM.
-Logins and installed tools survive a restart of the same name — reuse the name
-to resume, pick a new one for isolated work.
+Each session name maps to a persistent workspace mounted at `/workspace` inside
+the VM (the repo lands in `/workspace/repo`). Logins and installed tools survive
+a restart of the same name — reuse the name to resume, pick a new one for
+isolated work. `workspace` points a session at someone else's workspace, which
+is how you log a scheduled task's agent in.
+
+`memory_mb` and `cpus` size the VM (2 CPUs and ~3 GB by default); `ephemeral`
+throws the workspace away when the session ends.
+
+## Running one command instead of an agent
+
+`command` replaces the agent with a single command line. It is parsed as
+**argv, not as a shell script**: `foo; bar` passes `;` as an argument. Wrap
+anything with `;`, `&&` or a pipe in a shell — `sh -c 'foo; bar'`.
+
+A command that exits also ends the session, and its output goes with it. To
+inspect the result, end the command with something that stays up (`sh`), or
+run it with `coding_agent_send` inside a session that is already alive.
+
+If a session's VM dies, its record can be left claiming to be running while
+`read` reports the pane is gone and `wake` refuses. `coding_workspace_remove`
+clears it; start again under a new name.
 
 ## Showing a dev server on a screen
 
 Pass `expose_port` to `coding_agent_start` with the guest port the app will
-listen on (e.g. 3010 for `next dev -p 3010`). The reply includes a preview
-URL (`preview_url`, the LAN https name `https://<session>.<device>.solja.one`,
-plus `preview_tailscale_url` when the device has Tailscale enabled — same
-LAN-vs-elsewhere rule as every device address); once the agent has the server
-running, cast that URL with the **cast-to-screen** skill and the live app is
-on the TV. Only a session whose name is a plain lowercase label (letters,
-digits, hyphens) gets an https name; other names fall back to `http://<ip>:<port>`. The preview URL stays
+listen on (e.g. 3010 for `next dev -p 3010`). The reply includes a preview URL
+— the session's own https name under the device's domain, plus a
+`tailscale_url` when the device is on a tailnet (same LAN-vs-elsewhere rule as
+every device address). Once the agent has the server running, cast that URL
+with the **cast-to-screen** skill and the live app is on the TV. Only a session
+whose name is a plain lowercase label (letters, digits, hyphens) gets an https
+name; other names fall back to `http://<ip>:<port>`. The preview URL stays
 stable across sleep/wake, so the loop is: talk to the session from your
 laptop, the app hot-reloads on the screen. The dev server must bind 0.0.0.0
 inside the VM, not 127.0.0.1.
 
 ## An isolated browser for the agent
 
-Pass `browser: true` (or `"obscura"`) to give the session its own in-VM
-browser: Obscura, a lightweight CDP-compatible engine that persists in the
-workspace. The agent connects Playwright over CDP to it and verifies its own
-dev server — click flows, DOM assertions, screenshots — without touching any
-browser outside the sandbox. Pass `"chromium"` when pixel-accurate rendering
-matters; it is much heavier and reinstalls on each wake. Each session's
-browser is fully isolated: cookies and logins never leak between sessions or
-to the device.
+Pass `browser: true` to give the session its own in-VM browser: Obscura, a
+lightweight CDP-compatible engine that installs into `/workspace/.tools/bin`
+and persists there. The agent starts it and connects Playwright over CDP to
+verify its own dev server — click flows, DOM assertions, screenshots — without
+touching any browser outside the sandbox. `"chromium"` selects full Chromium
+instead when pixel-accurate rendering matters (heavier, reinstalls on each
+wake), though the published schema types `browser` as a boolean, so a strict
+client may refuse the string form. Each session's browser is fully isolated:
+cookies and logins never leak between sessions or to the device.
 
 ## One login per device
 
@@ -105,28 +138,36 @@ Idle sessions sleep automatically after ~30 minutes of unchanged output
 (`sleep_after_min` on start overrides; `-1` never). A sleeping session costs no
 RAM; `coding_agent_wake` — or simply `coding_agent_send` — relaunches it in the
 same workspace with the agent's `resume` flag, restoring the conversation.
-Pass `persistent: true` on start to have the device relaunch the session after
-a reboot; otherwise it is listed as `interrupted` until something wakes it.
+Sleeping takes about ten seconds and waking about twenty. Pass
+`persistent: true` on start to have the device relaunch the session after a
+reboot; otherwise it is listed as `interrupted` until something wakes it.
 
 ## Reading and replying
 
-Output is a terminal screen, not a stream: `coding_agent_read` returns what's
-currently visible, capped at a few thousand bytes. Poll it, or use
-`coding_agent_wait`, which reports `working` while the screen keeps changing and
-returns once it has been still for a few seconds.
+Output is a terminal screen, not a stream: `coding_agent_read` returns what is
+currently visible, so anything that scrolled past is gone. Ask for output that
+fits, or have the agent write long results to a file in `/workspace`. Poll it,
+or use `coding_agent_wait` with `status: "idle"`, which returns once the screen
+has been still for a few seconds.
 
 "Settled" means either finished *or* waiting for input. Read the output to tell
 which, then `coding_agent_send` if it's a prompt. Interactive logins work this
 way too — the agent's device-code prompt comes back through `read`, and you send
 the answer through `send`.
 
+The screen is narrow by default and lines wrap mid-word. A person who wants a
+real terminal — full width, keys, colour — opens the session's console in the
+device admin panel, which attaches to the very same tmux screen you are reading;
+anything they type shows up in your next `read`.
+
 ## Pacing
 
-VM startup is slow, especially on a cold image. Give `coding_agent_start` room
-before the first read, and prefer `coding_agent_wait` over a tight read loop.
+Give `coding_agent_start` room before the first read, and prefer
+`coding_agent_wait` over a tight read loop.
 
-If everything is unusably slow, the device is likely running QEMU without KVM.
-Mention it — that's a device setup problem, not something to retry through.
+If everything is unusably slow, the device is likely falling back to software
+emulation because `/dev/kvm` is missing. Mention it — that's a device setup
+problem, not something to retry through.
 
 ## Showing the work
 

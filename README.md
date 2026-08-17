@@ -15,7 +15,7 @@ Claude Code gets the skills, which teach an agent *how* to use the tools well.
 ### Any agent (paste this)
 
 ```
-Set up Tarvis from https://tarvisai.com/SKILL.md
+Set up Tarvis from https://tarvis.io/SKILL.md
 ```
 
 Works in Claude Code, Codex, Cursor - anything that can fetch a URL and run a
@@ -24,7 +24,7 @@ shell. The agent finds the device, pairs, configures itself and verifies.
 ### Terminal
 
 ```bash
-curl -fsSL https://tarvisai.com/install.sh | bash
+curl -fsSL https://tarvis.io/install.sh | bash
 ```
 
 Finds the device, opens the approval page, asks for the code, then writes config
@@ -137,7 +137,7 @@ device answers on, plus `mcp_url`.
 **Cloud-hosted clients** — ChatGPT, claude.ai web connectors — connect from the
 vendor's servers, not your machine, so they cannot reach a device on your LAN at
 all. No configuration changes that. The device must be published on a public
-HTTPS address first, which is what its `.solja.one` name is for.
+HTTPS address first, which is what the domain its account issues it is for.
 
 ## Finding the right address
 

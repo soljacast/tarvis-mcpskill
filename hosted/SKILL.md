@@ -12,7 +12,7 @@ for any of this.
 ## 1. Fetch and run it
 
 ```bash
-curl -fsSL https://tarvisai.com/install.sh -o /tmp/tarvis-install.sh
+curl -fsSL https://tarvis.io/install.sh -o /tmp/tarvis-install.sh
 bash /tmp/tarvis-install.sh --json
 ```
 

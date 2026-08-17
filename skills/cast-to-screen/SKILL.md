@@ -13,6 +13,11 @@ by calling `cast_content` or `cast_file`; the device renders it fullscreen.
 Call `device_status` first if you don't already know how many screens exist or
 what's on them. Screens are numbered from 1. Screen 1 is the default.
 
+`screen_count` is what the device's plan allows, not how many displays are
+plugged in. Casting to an output with nothing attached still reports success;
+`screen_screenshot` failing on that screen is the giveaway. Stay on screen 1
+unless the user names another.
+
 ## Choosing the tool
 
 **`cast_content`** — for anything already reachable at a URL, or for text you
@@ -33,6 +38,12 @@ write yourself. Pass `content_type` plus `content`:
 it, pass `filename` and `data`. PowerPoint and Word files are converted to PDF
 automatically, so they page through like a deck. Files over 8 MB should go
 through the device's `/api/agent/v1/cast/upload` route instead.
+
+Send PDFs, video and audio this way with confidence. **Images and HTML files
+currently go through the same document converter and can land on the screen
+blank** — put those somewhere with a URL and use `cast_content`, or write HTML
+straight into `cast_content` as `html`. Screenshot the screen after any
+`cast_file`; the call reports success either way.
 
 Give every cast a short `title` — it's what the device shows while loading and
 what `device_status` reports back.

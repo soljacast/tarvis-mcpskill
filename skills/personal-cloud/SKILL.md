@@ -16,23 +16,27 @@ last outcome, coding sessions — so you have context before adding anything.
 
 ## Two URLs per service
 
-Every app and session comes with `url` (the LAN name, e.g.
-`https://plane.sea.solja.one`) and, when the owner enabled Tailscale for the
-device, `tailscale_url` (`https://plane.sea.ts.solja.one`). Both are real
-https names on the device's own certificate; the device routes them to the
-right port itself. The rule never changes: **on the same Wi-Fi as the box use
-`url`; anywhere else use `tailscale_url`.** Hand the user whichever matches
-where they are, or both. Until the device's domain is active (fresh pairing,
-no cert yet) the same fields carry plain `http://<ip>:<port>` links instead —
-still correct, just not https.
+Every app and session comes with `url` (the LAN name — the service's label as a
+subdomain of the device's own domain) and, when the owner enabled Tailscale for
+the device, `tailscale_url` (the same label on the tailnet name). Both are real
+https names covered by the device's own wildcard certificate; the device routes
+them to the right port itself, so a new app is reachable over https the moment
+it starts — no DNS or certificate step to run, and nothing to ask the user for.
+The rule never changes: **on the same Wi-Fi as the box use `url`; anywhere else
+use `tailscale_url`.** Hand the user whichever matches where they are, or both.
+
+Never assemble these names yourself — read them from the tool's reply or
+`device_status`. Until the device's domain is active (fresh pairing, no cert
+yet) the same fields carry plain `http://<ip>:<port>` links instead — still
+correct, just not https.
 
 ## Hosted apps
 
 Apps are docker-compose projects run by the device (podman underneath). You
 never touch the container engine: you hand over a template or compose, the
 device sanitizes it, allocates ports, generates passwords, and runs it
-with restart-on-boot persistence. The app's `name` becomes its subdomain
-(`<name>.<device>.solja.one`), so keep it a short lowercase label. Data lives on the encrypted data partition.
+with restart-on-boot persistence. The app's `name` becomes its subdomain, so
+keep it a short lowercase label. Data lives on the encrypted data partition.
 
 - `app_catalog` — curated slugs installable offline. Any other slug from
   Coolify's service directory (github.com/coollabsio/coolify,
@@ -48,10 +52,11 @@ dir), named volumes are fine. Published ports are reallocated by the device;
 the install result tells you where the app actually listens. `app_remove`
 keeps data unless `purge: true` — confirm purge with the user first.
 
-First start pulls images; on a Pi that can take many minutes and an install
-can return with a `start_error` while layers are still coming down. Check
-`app_list` and read `app_logs` before declaring failure; a retry of
-`app_start` resumes from cached layers.
+Install is as fast as the image pull: a small image is live on its https name
+in under ten seconds, a large one takes many minutes and can return with a
+`start_error` while layers are still coming down. Check `app_list` and read
+`app_logs` before declaring failure; a retry of `app_start` resumes from cached
+layers.
 
 ### Monitor what you host — in the background, never by stalling
 
@@ -89,7 +94,12 @@ morning digest at 07:30.
   `timezone`. `screen` picks the display. Missed runs while powered off run
   once at boot unless `catch_up_on_boot: false`.
 - `task_run_now` tests it immediately; `task_runs` shows outcomes and the
-  latest log tail. `task_update` with `enabled: false` pauses.
+  latest log tail. `task_update` with `enabled: false` pauses. Create a new task
+  with `enabled: false`, prove it with `task_run_now`, then enable it — a broken
+  prompt otherwise fails quietly on a schedule nobody is watching.
+
+Each run is a fresh sandbox VM, so a trivial prompt is done in seconds and
+nothing leaks between runs except the workspace.
 
 ## Logged-in sites without handing over credentials
 
