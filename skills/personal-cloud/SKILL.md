@@ -57,11 +57,17 @@ in under ten seconds, a large multi-service one takes minutes and can return
 while layers are still coming down. Check `app_list` and read `app_logs`
 before declaring failure; a retry of `app_start` resumes from cached layers.
 
+**These devices are arm64, so pick images that are.** An x86-only image
+installs cleanly, then dies the instant it execs — nothing retries it, and no
+amount of restarting helps. Prefer a multi-arch image, and when a template
+pins one that isn't (CyberChef's own `ghcr.io/gchq/cyberchef` is x86-only, for
+instance), write the compose yourself against an image that publishes arm64 —
+`mpepping/cyberchef` in that case. Docker Hub's tag list shows the
+architectures.
+
 `app_list` reports `last_error` for an app that is meant to be running and
-isn't — read it before guessing. The common one on these devices is an image
-published only for x86: it installs cleanly, then the container dies instantly
-and the app says its image has no arm64 build. Nothing retries that; pick a
-different app or a different image.
+isn't, and the app's own URL says the same thing rather than a bare port
+error. Read it before guessing: it names the arm64 case outright.
 
 ### Monitor what you host — in the background, never by stalling
 
