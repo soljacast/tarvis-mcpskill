@@ -27,11 +27,14 @@ WiFi — ask for the address shown on the TV and use it directly.
 
 ```bash
 curl -fsS -X POST <device>/api/agent/auth/request \
-  -H 'Content-Type: application/json' -d '{"client_name":"claude-code"}'
+  -H 'Content-Type: application/json' -d '{"client_name":"claude-code"}' \
+  | tee /tmp/tarvis-req.json
 ```
 
-You get back `request_id` and `approve_url`. Give the user that URL and keep the
-`request_id`; nothing is granted yet.
+You get back `request_id` and `approve_url`. Give the user that URL; nothing is
+granted yet. Read the id back out of that file for the next two calls rather
+than retyping it — it is long, and a truncated one fails with a parse error
+that reads like a bug in the device.
 
 ## 3. Get it approved
 
@@ -71,9 +74,14 @@ That returns `token`. Write it into the client without ever printing it — in
 Claude Code:
 
 ```bash
-claude mcp add --transport http tarvis <mcp_url> \
+claude mcp add -s user --transport http tarvis <mcp_url> \
   --header "Authorization: Bearer <token>"
 ```
+
+`-s user` is not optional. Without it the server is written at `local` scope,
+which binds it to whichever directory you happened to run the command in — the
+device then vanishes from every other project and the next session pairs all
+over again.
 
 For any other client, put `<mcp_url>` and that same header in its MCP config.
 

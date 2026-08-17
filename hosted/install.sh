@@ -145,7 +145,7 @@ esac
 
 if [ -z "$CLIENT" ] || [ "$CLIENT" = "claude-code" ]; then
   if command -v claude >/dev/null 2>&1; then
-    if claude mcp add --transport http tarvis "$MCP_URL" \
+    if claude mcp add -s user --transport http tarvis "$MCP_URL" \
          --header "Authorization: Bearer $TOKEN" >/dev/null 2>&1; then
       note "claude-code"
     else
