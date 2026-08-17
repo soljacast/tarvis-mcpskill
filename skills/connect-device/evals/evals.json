@@ -1,0 +1,48 @@
+{
+  "skill_name": "connect-device",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "connect to my tarvis device",
+      "expected_output": "The device found by probing, a pairing request raised, and the MCP server written at user scope once approved.",
+      "expectations": [
+        "Checks whether a tarvis server is already configured before pairing",
+        "Probes soljacast.local and the numbered names before asking the user for an address",
+        "Sends client_name, not name, on /api/agent/auth/request",
+        "Writes the server with `claude mcp add -s user`, never the default local scope",
+        "Verifies with a tools/list call before claiming success",
+        "Tells the user to fully quit and reopen the client"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I just installed the tarvis plugin but there are no tarvis tools",
+      "expected_output": "Recognised as an unpaired client and taken through pairing.",
+      "expectations": [
+        "Does not treat the missing tools as a plugin installation fault",
+        "Runs discovery rather than asking for the device address first",
+        "Ends with a configured MCP server and a restart instruction"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "every tarvis tool says unauthorized now",
+      "expected_output": "Treated as a revoked or expired token and re-paired.",
+      "expectations": [
+        "Identifies that the existing token no longer works rather than re-probing the network only",
+        "Requests a fresh grant instead of reusing the old request id",
+        "Replaces the configured server rather than adding a second one"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "pair the device, I'll approve it in the browser",
+      "expected_output": "Pairing driven to the approval page, then completed from the code the user reads back.",
+      "expectations": [
+        "Hands over approve_url rather than asking for the admin password",
+        "Keeps the request id from the saved response instead of retyping an abbreviated one",
+        "Exchanges the code promptly and does not print the token"
+      ]
+    }
+  ]
+}

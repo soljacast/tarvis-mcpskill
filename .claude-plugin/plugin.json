@@ -16,20 +16,5 @@
     "casting",
     "screens",
     "mcp"
-  ],
-  "userConfig": {
-    "device_url": {
-      "type": "string",
-      "title": "Device URL",
-      "description": "Where the device answers, e.g. http://soljacast.local or http://10.0.0.5",
-      "required": true
-    },
-    "device_token": {
-      "type": "string",
-      "title": "Access token",
-      "description": "Approve a connection at <device>/admin?mcp_login and paste the token here",
-      "sensitive": true,
-      "required": true
-    }
-  }
+  ]
 }

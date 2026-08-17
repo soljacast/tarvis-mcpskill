@@ -1,0 +1,38 @@
+[
+  {
+    "query": "connect to my tarvis",
+    "should_trigger": true
+  },
+  {
+    "query": "set up tarvis on this machine",
+    "should_trigger": true
+  },
+  {
+    "query": "pair the device with claude code",
+    "should_trigger": true
+  },
+  {
+    "query": "the tarvis tools are gone",
+    "should_trigger": true
+  },
+  {
+    "query": "tarvis says unauthorized on every call",
+    "should_trigger": true
+  },
+  {
+    "query": "cast this deck to the tv",
+    "should_trigger": false
+  },
+  {
+    "query": "what is my device's address",
+    "should_trigger": false
+  },
+  {
+    "query": "install uptime kuma on the box",
+    "should_trigger": false
+  },
+  {
+    "query": "start a coding agent on the device",
+    "should_trigger": false
+  }
+]

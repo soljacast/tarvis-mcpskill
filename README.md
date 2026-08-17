@@ -4,8 +4,8 @@ Drive a Tarvis device from any MCP-speaking agent: cast to its screens, read and
 control the web pages it shows, and run sandboxed coding agents on the box.
 
 The device runs the MCP server itself, so there is nothing to install and no
-background process on your machine. This repo is the Claude Code plugin: the
-connection config plus skills that teach an agent how to use the tools well.
+background process on your machine. This repo is the Claude Code plugin: skills
+that teach an agent how to pair with a device and how to use its tools well.
 
 ## Install
 
@@ -39,16 +39,22 @@ target just one.
 ```
 
 Two commands because the first registers the repo as a marketplace and the
-second installs the plugin from it. You'll be asked for two things:
+second installs the plugin from it. Neither asks you anything: the plugin ships
+skills, not a connection.
 
-- **Device URL** — use the device's https name if it has one (see below);
-  `http://soljacast.local` works too.
-- **Access token** — get one by opening `<device>/admin?mcp_login` in a browser,
-  signing in as admin, and approving the connection. The device shows a code;
-  paste it back where the terminal asks, and it becomes your token.
+Then, in a session:
 
-The token is stored in your OS keychain, never in a settings file. Revoke it any
-time from **Manage → Settings → System → Connected agents** on the device.
+```
+connect to my tarvis
+```
+
+The `connect-device` skill probes the network, pairs, and writes the MCP server
+at user scope, so the device is there from every project. It asks you for an
+address only if nothing answers, and for the admin password only to approve the
+request — the browser approval page is always available instead.
+
+Revoke a connection any time from **Manage → Settings → System → Connected
+agents** on the device.
 
 ### Claude Desktop, Cursor, Zed, Cline
 
@@ -180,9 +186,11 @@ that tells an agent which one to reach for and when to hand back to a human.
 
 | Skill | Covers |
 |---|---|
+| `connect-device` | Pairing this client with a device and writing the MCP config |
 | `cast-to-screen` | Showing web pages, video, decks, images, text and audio on a screen; controlling what's showing |
 | `drive-web-page` | Reading a casted page's accessibility tree and clicking, typing and navigating in it |
-| `tarvis-vm` | Sandboxed Gondolin VMs and herdr coding-agent sessions (needs VM access on the token) |
+| `tarvis-vm` | Sandboxed krun micro-VMs and herdr coding-agent sessions (needs VM access on the token) |
+| `personal-cloud` | Self-hosted apps, scheduled agent tasks and secrets on the box (needs VM access) |
 | `find-device` | Locating a device on the network over mDNS and picking the right address |
 
 ## Development
@@ -193,8 +201,7 @@ Symlink this repo into your skills directory and it loads with no install step:
 ln -s "$PWD" ~/.claude/skills/tarvis
 ```
 
-It appears as `tarvis@skills-dir`. `SKILL.md` edits apply immediately;
-`.mcp.json` changes need `/reload-plugins`.
+It appears as `tarvis@skills-dir` and `SKILL.md` edits apply immediately.
 
 Each skill carries `evals/evals.json` with test cases and a trigger set. Run
 them with the official tooling:
