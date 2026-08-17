@@ -43,9 +43,18 @@ them, and `target` also takes a pane id from `coding_sessions`.
 ## Starting a session
 
 Give it a `name` (the workspace key), the configured `agent`, and optionally a
-`repo` and `branch`. Expect roughly 35 seconds from call to a live prompt —
-plus a few minutes the very first time on a device, which pulls the ~165 MB
-runtime image.
+`repo` and `branch` — a repo with no branch lands on `master`.
+
+**The reply tells you what actually happened**, because the VM writes its own
+status: *ready* means git, the clone and the agent are all up and you can start
+working; *still provisioning* means it needs longer, so `coding_agent_wait`
+then read; an error carries the failing output from the pane. Don't treat a
+start as done until it says ready.
+
+Expect roughly 35 seconds to ready. Two things are slower and only once per
+device: the first session ever pulls the ~165 MB runtime image, and the first
+session of a given agent installs its CLI — which is then kept and mounted into
+every later session and scheduled run, so they start with it already there.
 
 **The repo must be an `https://` URL.** The VM's network allows HTTP and TLS but
 not general egress, so `git@github.com:...` will not connect. Rewrite SSH remotes
