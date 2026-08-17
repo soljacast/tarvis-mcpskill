@@ -103,30 +103,33 @@ instead when pixel-accurate rendering matters — heavier, and it reinstalls on
 each wake. Each session's browser is fully isolated:
 cookies and logins never leak between sessions or to the device.
 
-## One login per device
+## Two logins, each asked for once
 
-Agent logins live in the session workspace, so the same session never asks
-twice. To make every future session start signed in: configure the agent with
-`login_paths` (for Claude Code: `.claude/.credentials.json` and
-`.claude.json`), have the user log in once in any session, then call
-`coding_agent_save_login` with that session's name. The files land on the
-encrypted data volume and seed each new workspace. A revoked or expired login
-is fixed the same way: log in once, save again.
+A session stalls on exactly two things, and `coding_sessions` reports both —
+each agent as *signed in* or *needs login*, and which git hosts are connected.
+`coding_agent_start` repeats the warning when it applies. Read them **before**
+starting, and get the logins done first; otherwise the user watches a session
+sit on a prompt or a private clone fail.
 
-## Private repos and git hosts
+**Git.** `github_connect` returns a code and a URL — relay both, the user
+approves in their browser, poll `git_status` until connected. Other hosts
+(GitLab, Bitbucket, Gitea, self-hosted) take a personal access token the user
+enters in the device admin panel; never ask for a token in chat. Once
+connected, every VM has working git: `~/.config/tarvis/git-hosts.json` lists
+the hosts, the matching CLI (gh, glab, tea) is installed and token env vars
+are set, so use the provider's own commands for PRs. Private repos then clone
+straight from the `repo` argument.
 
-Connect the device once and every VM gets working git:
+**The agent.** Configure it with `login_paths` (for Claude Code:
+`.claude/.credentials.json` and `.claude.json`), start a session, and relay
+its login prompt through `coding_agent_read` / `coding_agent_send`. The device
+saves that login by itself and seeds every later session with it —
+`coding_agent_save_login` forces the save immediately if you don't want to
+wait for the sweep. A revoked or expired login is the same story: sign in once
+more in any session.
 
-- GitHub: `github_connect` returns a code and URL — relay both, the user
-  approves in their browser, poll `git_status` until connected.
-- Any other host (GitLab, Bitbucket, Gitea, self-hosted): the user adds a
-  personal access token in the device admin panel. Never ask for a token in
-  chat.
-
-Inside each VM, `~/.config/tarvis/git-hosts.json` lists the connected hosts;
-the matching CLI (gh, glab, tea) is installed and token env vars are set, so
-pick the provider's own commands for PRs or merge requests. Private repos
-then clone straight from the `repo` argument of `coding_agent_start`.
+Neither login is ever asked for twice. If one is missing, the fix is the
+one-time flow above, not a workaround.
 
 ## Sessions belong to the device
 
