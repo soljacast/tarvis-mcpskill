@@ -52,6 +52,19 @@ a reload does not pick up new MCP servers.
 Never print the access token. The script writes it straight into the config;
 there is no reason for it to appear in the conversation.
 
+Then get the skills. The tools alone leave an agent guessing at things the
+device is opinionated about — which image architectures run, when a URL is
+ready to cast, how a coding session reports itself. In **Claude Code**, give
+the user these two lines to run (slash commands are typed by them, not by you):
+
+```
+/plugin marketplace add soljacast/tarvis-mcpskill
+/plugin install tarvis@tarvis-mcpskill
+```
+
+Other clients get the tools only, which works — the skills are guidance, not a
+dependency. Skip this step if `tarvis` is already installed there.
+
 ## 4. When status is `error`
 
 The object carries `error` and `hint`. Follow the hint. The common ones:
