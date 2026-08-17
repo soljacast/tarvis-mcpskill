@@ -53,10 +53,15 @@ the install result tells you where the app actually listens. `app_remove`
 keeps data unless `purge: true` — confirm purge with the user first.
 
 Install is as fast as the image pull: a small image is live on its https name
-in under ten seconds, a large one takes many minutes and can return with a
-`start_error` while layers are still coming down. Check `app_list` and read
-`app_logs` before declaring failure; a retry of `app_start` resumes from cached
-layers.
+in under ten seconds, a large multi-service one takes minutes and can return
+while layers are still coming down. Check `app_list` and read `app_logs`
+before declaring failure; a retry of `app_start` resumes from cached layers.
+
+`app_list` reports `last_error` for an app that is meant to be running and
+isn't — read it before guessing. The common one on these devices is an image
+published only for x86: it installs cleanly, then the container dies instantly
+and the app says its image has no arm64 build. Nothing retries that; pick a
+different app or a different image.
 
 ### Monitor what you host — in the background, never by stalling
 

@@ -34,13 +34,32 @@ write yourself. Pass `content_type` plus `content`:
 | `audio` | an audio URL | music, recordings |
 
 **`cast_file`** — for a file on the machine you're running on. Read it, base64
-it, pass `filename` and `data`. PowerPoint and Word files are converted to PDF
-automatically, so they page through like a deck. Files over 8 MB should go
-through the device's `/api/agent/v1/cast/upload` route instead.
+it, pass `filename` and `data`. **The extension decides how it is shown**, so
+give it a real one: `.png`/`.jpg`/`.svg` show as an image, `.pdf` pages through
+with `cast_page`, `.pptx`/`.docx` convert to PDF first, `.html` renders as a
+web page, video and audio play. Files over 8 MB should go through the device's
+`/api/agent/v1/cast/upload` route instead.
 
-Anything already reachable at a URL is better cast with `cast_content`, and a
-page you generate yourself goes straight into `cast_content` as `html` — save
+Anything already reachable at a URL is better cast with `cast_content` — save
 `cast_file` for bytes that live only on your machine.
+
+## Writing a page for a screen
+
+HTML is the most useful thing you can generate for a TV: charts, summaries,
+dashboards, status boards. Cast it inline with `cast_content` as `html`, or as
+an `.html` file with `cast_file` — same renderer either way.
+
+Write it for a screen someone reads from across a room, not for a laptop:
+
+- **Fill one viewport if you can.** One screenful, no scrolling, is the format
+  that works — big type, few words, high contrast. Size with `vh`/`vw` units so
+  it fits whatever the device drives.
+- **If the content genuinely needs more room, make it scroll in clean
+  sections** — each section its own screenful, in document order, so
+  `cast_scroll` moves between them and never lands mid-sentence. Say which
+  section is showing when you scroll.
+- Assume no network: inline the CSS, and inline any image as a data URI.
+- Dark backgrounds read better on a TV than white ones.
 
 Give every cast a short `title` — it's what the device shows while loading and
 what `device_status` reports back.
