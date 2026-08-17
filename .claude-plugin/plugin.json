@@ -1,7 +1,7 @@
 {
   "name": "tarvis",
   "displayName": "Tarvis",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Cast to the screens on your Tarvis device, read and drive the web pages it shows, and run sandboxed coding agents on the box.",
   "author": {
     "name": "Soljacast",

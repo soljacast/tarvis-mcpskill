@@ -10,7 +10,7 @@
       "name": "tarvis",
       "source": "./",
       "description": "Cast to your Tarvis device's screens and drive what's on them.",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }
