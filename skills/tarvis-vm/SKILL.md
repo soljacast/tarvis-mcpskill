@@ -30,16 +30,15 @@ asleep, so several can coexist on an 8 GB box.
   device restart.
 - `coding_agent_read` — read a session's recent output.
 - `coding_agent_send` — type into a session (answering a prompt, giving an instruction).
-- `coding_agent_wait` — block until a session settles. Pass `status: "idle"`
-  (older device builds require it); `"working"` instead returns as soon as
-  output starts.
+- `coding_agent_wait` — block until a session settles, which is the default;
+  pass `status: "working"` to return as soon as output starts instead.
 - `coding_agent_sleep` / `coding_agent_wake` — park a session's VM to free RAM
   and bring it back later.
 - `coding_workspace_remove` — delete a session's workspace for good.
 
 `read`, `send` and `wait` name the session `target`; `sleep`, `wake`,
-`save_login` and `workspace_remove` call it `name`. Recent devices accept
-either, older ones don't, so use the one the tool asks for.
+`save_login` and `workspace_remove` call it `name`. Either key works on any of
+them, and `target` also takes a pane id from `coding_sessions`.
 
 ## Starting a session
 
@@ -63,9 +62,8 @@ throws the workspace away when the session ends.
 
 ## Running one command instead of an agent
 
-`command` replaces the agent with a command line. Write anything with `;`,
-`&&` or a pipe as `sh -c 'foo; bar'` — recent devices run `command` as a shell
-line, older ones as argv, and the explicit shell is right on both.
+`command` replaces the agent with a shell line, so pipes, redirections and
+several commands separated by `;` all work as written.
 
 **A command that exits ends the session, and its output goes with it.** To see
 a result, end the command with something that stays up (`sh`), or send it into

@@ -38,11 +38,9 @@ it, pass `filename` and `data`. PowerPoint and Word files are converted to PDF
 automatically, so they page through like a deck. Files over 8 MB should go
 through the device's `/api/agent/v1/cast/upload` route instead.
 
-This is the path for documents, decks, video and audio. For an image prefer
-`cast_content` with a URL, and for a page you generate write the markup
-straight into `cast_content` as `html` — both render better than a file
-round-trip, and older device builds put images and HTML through the deck
-converter and land on the screen blank.
+Anything already reachable at a URL is better cast with `cast_content`, and a
+page you generate yourself goes straight into `cast_content` as `html` — save
+`cast_file` for bytes that live only on your machine.
 
 Give every cast a short `title` — it's what the device shows while loading and
 what `device_status` reports back.
