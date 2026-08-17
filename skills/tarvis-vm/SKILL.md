@@ -30,17 +30,16 @@ asleep, so several can coexist on an 8 GB box.
   device restart.
 - `coding_agent_read` — read a session's recent output.
 - `coding_agent_send` — type into a session (answering a prompt, giving an instruction).
-- `coding_agent_wait` — block until a session reaches a status. **Both `target`
-  and `status` are required**; `status: "idle"` is the usual one (returns once
-  the screen stops changing), `"working"` returns as soon as output starts.
+- `coding_agent_wait` — block until a session settles. Pass `status: "idle"`
+  (older device builds require it); `"working"` instead returns as soon as
+  output starts.
 - `coding_agent_sleep` / `coding_agent_wake` — park a session's VM to free RAM
   and bring it back later.
 - `coding_workspace_remove` — delete a session's workspace for good.
 
-**Two different parameter names, and they are not interchangeable.** `read`,
-`send` and `wait` take `target`. `sleep`, `wake`, `save_login` and
-`workspace_remove` take `name`. Passing the wrong one fails with an unhelpful
-`no session named ''`.
+`read`, `send` and `wait` name the session `target`; `sleep`, `wake`,
+`save_login` and `workspace_remove` call it `name`. Recent devices accept
+either, older ones don't, so use the one the tool asks for.
 
 ## Starting a session
 
@@ -64,17 +63,13 @@ throws the workspace away when the session ends.
 
 ## Running one command instead of an agent
 
-`command` replaces the agent with a single command line. It is parsed as
-**argv, not as a shell script**: `foo; bar` passes `;` as an argument. Wrap
-anything with `;`, `&&` or a pipe in a shell — `sh -c 'foo; bar'`.
+`command` replaces the agent with a command line. Write anything with `;`,
+`&&` or a pipe as `sh -c 'foo; bar'` — recent devices run `command` as a shell
+line, older ones as argv, and the explicit shell is right on both.
 
-A command that exits also ends the session, and its output goes with it. To
-inspect the result, end the command with something that stays up (`sh`), or
-run it with `coding_agent_send` inside a session that is already alive.
-
-If a session's VM dies, its record can be left claiming to be running while
-`read` reports the pane is gone and `wake` refuses. `coding_workspace_remove`
-clears it; start again under a new name.
+**A command that exits ends the session, and its output goes with it.** To see
+a result, end the command with something that stays up (`sh`), or send it into
+a session that is already alive with `coding_agent_send`.
 
 ## Showing a dev server on a screen
 
@@ -97,9 +92,8 @@ lightweight CDP-compatible engine that installs into `/workspace/.tools/bin`
 and persists there. The agent starts it and connects Playwright over CDP to
 verify its own dev server — click flows, DOM assertions, screenshots — without
 touching any browser outside the sandbox. `"chromium"` selects full Chromium
-instead when pixel-accurate rendering matters (heavier, reinstalls on each
-wake), though the published schema types `browser` as a boolean, so a strict
-client may refuse the string form. Each session's browser is fully isolated:
+instead when pixel-accurate rendering matters — heavier, and it reinstalls on
+each wake. Each session's browser is fully isolated:
 cookies and logins never leak between sessions or to the device.
 
 ## One login per device
