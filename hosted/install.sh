@@ -50,6 +50,8 @@ discover() {
 
 # mDNS is blocked on plenty of guest and corporate networks. Fall back to
 # probing the local /24 in parallel; the device answers /api/agent/discover.
+SWEEP_BATCH=32   # concurrent probes; a whole /24 at once reads as a port scan
+
 sweep_subnet() {
   local me prefix hit tmp i
   me=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null ||
@@ -60,6 +62,12 @@ sweep_subnet() {
   for i in $(seq 1 254); do
     ( curl -4 -fsS --max-time 2 "http://$prefix.$i/api/agent/discover" 2>/dev/null |
         head -c 2000 | grep -q '"mcp_url"' && printf '%s\n' "$prefix.$i" >> "$tmp" ) &
+    # Drain each batch before starting the next, and stop as soon as one
+    # host answers so a device low in the range costs a couple of batches.
+    if [ $((i % SWEEP_BATCH)) -eq 0 ]; then
+      wait
+      [ -s "$tmp" ] && break
+    fi
   done
   wait
   hit=$(head -1 "$tmp" 2>/dev/null); rm -f "$tmp"
@@ -77,7 +85,7 @@ MCP_URL="$DEVICE/api/agent/v1/mcp"
 if [ -z "$CODE" ]; then
   REQ=$(curl -4 -fsS --max-time 10 -X POST "$DEVICE/api/agent/auth/request" \
         -H "Content-Type: application/json" \
-        -d "{\"name\":$(jstr "$(hostname -s 2>/dev/null || echo agent)")}" 2>/dev/null) \
+        -d "{\"client_name\":$(jstr "$(hostname -s 2>/dev/null || echo agent)")}" 2>/dev/null) \
     || fail "request" "pairing request failed" "Check the device is reachable at $DEVICE"
   RID=$(printf '%s' "$REQ" | jget request_id)
   URL=$(printf '%s' "$REQ" | jget approve_url)
@@ -168,9 +176,9 @@ except Exception: print(0)' 2>/dev/null)
 [ "${TOOLS:-0}" -eq 0 ] && fail "verify" "server returned no tools" \
   "Token may be wrong. Re-run phase 1 for a fresh request."
 
-if [ -z "$JSON_ONLY" ] && [ -r /dev/tty ]; then
+if [ -z "$JSON_ONLY" ] && [ -w /dev/tty ]; then
   printf '\n  Connected to %s\n  %s tools available, configured: %s\n  Fully quit and reopen your client (a reload is not enough).\n\n' \
-    "$DEVICE" "$TOOLS" "$(printf '%s' "$CONFIGURED" | tr -d '\"')" > /dev/tty
+    "$DEVICE" "$TOOLS" "$(printf '%s' "$CONFIGURED" | tr -d '\"')" > /dev/tty 2>/dev/null || true
 fi
 if [ -z "$CONFIGURED" ] && [ -z "$SKIPPED" ]; then
   emit "{\"phase\":\"configure\",\"status\":\"error\",\"error\":\"no supported client found\",\"hint\":\"Add it by hand: url $MCP_URL with header 'Authorization: Bearer <token>'. The token was not printed; re-run to mint a new one.\",\"mcp_url\":$(jstr "$MCP_URL")}" 1
