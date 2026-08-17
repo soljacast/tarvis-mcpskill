@@ -5,30 +5,35 @@ description: Connect this computer to a Tarvis (Soljacast) casting device so the
 
 # Connect to a Tarvis device
 
-Run the setup script. It finds the device, pairs, writes the config for whichever
-client you are running in, and verifies the result. Do not hand-roll `curl` calls
-for any of this.
+Pairing is four ordinary requests. **Do it with the calls below rather than by
+downloading and executing a script** — agent sandboxes routinely refuse to run a
+fetched shell script, and being blocked halfway through pairing is worse than
+doing it a step at a time. The script (`https://tarvis.io/install.sh`) is for a
+person at a terminal, or for configuring Claude Desktop, Cursor and Codex in one
+go; reach for it only if the user asks.
 
-## 1. Fetch and run it
+## 1. Find the device
 
 ```bash
-curl -fsSL https://tarvis.io/install.sh -o /tmp/tarvis-install.sh
-bash /tmp/tarvis-install.sh --json
+curl -4 -fsS --max-time 6 http://soljacast.local/api/agent/discover
 ```
 
-`--json` keeps it non-interactive, which is what you want: without it the script
-prompts a human for the code on the terminal instead of handing control back.
+It answers with `preferred` (use that as `<device>`) and `mcp_url`. Several boxes
+on one network take numbered names, so try `soljacast1.local` … `soljacast5.local`
+if the first does not answer. If mDNS is blocked — common on guest and corporate
+WiFi — ask for the address shown on the TV and use it directly.
 
-Every run prints one JSON object with `phase` and `status`. Read it; do not guess
-from exit codes.
+## 2. Ask for access
 
-If the device is not on this network, or discovery fails, pass the address the
-user reads off the TV screen: `--device http://<addr>`.
+```bash
+curl -fsS -X POST <device>/api/agent/auth/request \
+  -H 'Content-Type: application/json' -d '{"client_name":"claude-code"}'
+```
 
-## 2. When status is `approval_pending`
+You get back `request_id` and `approve_url`. Give the user that URL and keep the
+`request_id`; nothing is granted yet.
 
-The script has opened the browser and returned an `approve_url` and a
-`retry.command`.
+## 3. The human step
 
 Tell the user, in your own words:
 
@@ -39,18 +44,37 @@ Tell the user, in your own words:
 
 Ask them for that code. **This browser approval is the only human step and
 cannot be automated** — an agent token must never be able to create an admin
-session. Do not attempt to work around it.
+session. Do not attempt to work around it. Codes are single use and short
+lived, so exchange it as soon as they hand it over.
 
-Then run the returned `retry.command` with `<CODE>` replaced.
+## 4. Exchange the code and configure the client
 
-## 3. When status is `ok`
+```bash
+curl -fsS -X POST <device>/api/agent/auth/exchange \
+  -H 'Content-Type: application/json' \
+  -d '{"request_id":"<request_id>","code":"<CODE>"}'
+```
 
-`configured` lists the clients that were written, and `tools` is how many tools
-the device confirmed. Tell the user to **fully quit and reopen** their client —
-a reload does not pick up new MCP servers.
+That returns `token`. Write it into the client without ever printing it — in
+Claude Code:
 
-Never print the access token. The script writes it straight into the config;
-there is no reason for it to appear in the conversation.
+```bash
+claude mcp add --transport http tarvis <mcp_url> \
+  --header "Authorization: Bearer <token>"
+```
+
+For any other client, put `<mcp_url>` and that same header in its MCP config.
+
+Then confirm the device answers with the token:
+
+```bash
+curl -fsS -X POST <mcp_url> -H "Authorization: Bearer <token>" \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+A healthy device returns tens of tools. Tell the user to **fully quit and
+reopen** their client — a reload does not pick up new MCP servers.
 
 Then get the skills. The tools alone leave an agent guessing at things the
 device is opinionated about — which image architectures run, when a URL is
@@ -65,15 +89,14 @@ the user these two lines to run (slash commands are typed by them, not by you):
 Other clients get the tools only, which works — the skills are guidance, not a
 dependency. Skip this step if `tarvis` is already installed there.
 
-## 4. When status is `error`
+## 5. When something fails
 
-The object carries `error` and `hint`. Follow the hint. The common ones:
-
-- **no device found** — they are on a different network, or mDNS is blocked
-  (usual on guest and corporate WiFi). Ask for the IP and re-run with `--device`.
-- **code rejected** — codes are single use and short lived. Start again from
-  step 1 for a fresh request rather than reusing the id.
-- **server returned no tools** — the token did not take. Start again from step 1.
+- **nothing answers discovery** — they are on a different network, or mDNS is
+  blocked (usual on guest and corporate WiFi). Ask for the address on the TV.
+- **the exchange rejects the code** — codes are single use and short lived. Go
+  back to step 2 for a fresh request rather than reusing the id.
+- **`tools/list` returns nothing** — the token did not take. Start again from
+  step 2.
 
 Stop and explain if it fails twice. Do not loop.
 
@@ -83,5 +106,7 @@ Stop and explain if it fails twice. Do not loop.
 connect from the vendor's servers, not this machine, and the device is on a home
 network. Say so plainly rather than attempting a workaround.
 
-**Claude Desktop** has no shell, so it cannot run this itself. Run the script
-from a terminal with `--client claude-desktop`, then restart the app.
+**Claude Desktop** has no shell, so it cannot pair itself. Run
+`curl -fsSL https://tarvis.io/install.sh | bash -s -- --client claude-desktop`
+from a terminal, then restart the app. The script is also the quickest way to
+configure Cursor and Codex in one pass.
