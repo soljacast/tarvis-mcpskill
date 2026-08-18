@@ -40,10 +40,13 @@ discover() {
     curl -4 -fsS --max-time 8 "$DEVICE/api/agent/discover" 2>/dev/null && return 0
     return 1
   fi
-  local n out
+  local n base out
+  # Personal-plan boxes answer to tarvis.local, every box to soljacast.local.
   for n in "" 1 2 3 4 5; do
-    out=$(curl -4 -fsS --max-time 6 "http://soljacast$n.local/api/agent/discover" 2>/dev/null) || continue
-    printf '%s' "$out"; return 0
+    for base in tarvis soljacast; do
+      out=$(curl -4 -fsS --max-time 6 "http://$base$n.local/api/agent/discover" 2>/dev/null) || continue
+      printf '%s' "$out"; return 0
+    done
   done
   sweep_subnet
 }

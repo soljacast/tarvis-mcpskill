@@ -15,13 +15,16 @@ go; reach for it only if the user asks.
 ## 1. Find the device
 
 ```bash
+curl -4 -fsS --max-time 6 http://tarvis.local/api/agent/discover
 curl -4 -fsS --max-time 6 http://soljacast.local/api/agent/discover
 ```
 
-It answers with `preferred` (use that as `<device>`) and `mcp_url`. Several boxes
-on one network take numbered names, so try `soljacast1.local` … `soljacast5.local`
-if the first does not answer. If mDNS is blocked — common on guest and corporate
-WiFi — ask for the address shown on the TV and use it directly.
+It answers with `preferred` (use that as `<device>`) and `mcp_url`. A
+Personal-plan box answers to both names; Lite and older boxes only to
+`soljacast.local`. Several boxes on one network take numbered names, so try
+`tarvis1.local` … `tarvis5.local` and the `soljacast` equivalents if neither
+answers. If mDNS is blocked — common on guest and corporate WiFi — ask for the
+address shown on the TV and use it directly.
 
 ## 2. Ask for access
 

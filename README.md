@@ -150,13 +150,16 @@ HTTPS address first, which is what the domain its account issues it is for.
 You do not need to know an IP. Devices publish themselves over mDNS:
 
 ```bash
-curl http://soljacast.local/api/agent/discover
+curl http://tarvis.local/api/agent/discover      # Personal-plan boxes
+curl http://soljacast.local/api/agent/discover   # every box
 ```
 
-Several boxes on one network cannot share a name, so each takes the first free
-one at boot — `soljacast`, then `soljacast1`, up to `soljacast19`. Probe the
-numbered names if the first does not answer. `.local` resolution is built into
-macOS, Linux and Windows 10+, so plain HTTP requests work everywhere.
+A box on the Personal plan answers to both names; Lite and older boxes only to
+`soljacast.local`. Several boxes on one network cannot share a name, so each
+takes the first free one at boot — `tarvis`, then `tarvis1`, up to `tarvis19`,
+and the same for `soljacast`. Probe the numbered names if the first does not
+answer. `.local` resolution is built into macOS, Linux and Windows 10+, so plain
+HTTP requests work everywhere.
 
 The reply lists every address best-first (LAN https, Tailscale https, mDNS,
 raw IP) plus a `preferred` and a ready-made `mcp_url`. Try each in turn and

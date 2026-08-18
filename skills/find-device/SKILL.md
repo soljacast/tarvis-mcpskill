@@ -8,24 +8,31 @@ allowed-tools: Bash
 
 Devices publish themselves over mDNS. You do not need to know an IP.
 
-## 1. Try the well-known name
+## 1. Try the well-known names
 
 ```bash
+curl -s --max-time 3 http://tarvis.local/api/agent/discover
 curl -s --max-time 3 http://soljacast.local/api/agent/discover
 ```
 
 A JSON reply means you found it. Skip to step 3.
 
+Boxes on the Personal plan answer to **both** names; older and Lite boxes answer
+only to `soljacast.local`. Try `tarvis.local` first — it is the name on the
+device — but never conclude there is no device until both have been tried.
+
 ## 2. Probe the numbered names
 
-Several boxes on one network cannot all be `soljacast.local`. Each takes the
-first free name at boot, so the second becomes `soljacast1`, the third
-`soljacast2`, and so on up to `soljacast19`.
+Several boxes on one network cannot share a name. Each takes the first free one
+at boot, so the second becomes `tarvis1`, the third `tarvis2`, up to 19, and the
+same for `soljacast`.
 
 ```bash
 for n in "" 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19; do
-  r=$(curl -s --max-time 2 "http://soljacast$n.local/api/agent/discover") || continue
-  [ -n "$r" ] && echo "soljacast$n.local: $r"
+  for base in tarvis soljacast; do
+    r=$(curl -s --max-time 2 "http://$base$n.local/api/agent/discover") || continue
+    [ -n "$r" ] && echo "$base$n.local: $r"
+  done
 done
 ```
 
@@ -33,9 +40,11 @@ Windows PowerShell:
 
 ```powershell
 foreach ($n in @('') + 1..19) {
-  try { $r = Invoke-RestMethod -Uri "http://soljacast$n.local/api/agent/discover" -TimeoutSec 2 }
-  catch { continue }
-  "soljacast$n.local -> $($r.preferred)"
+  foreach ($base in 'tarvis', 'soljacast') {
+    try { $r = Invoke-RestMethod -Uri "http://$base$n.local/api/agent/discover" -TimeoutSec 2 }
+    catch { continue }
+    "$base$n.local -> $($r.preferred)"
+  }
 }
 ```
 

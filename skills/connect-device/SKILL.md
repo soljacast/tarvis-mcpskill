@@ -23,16 +23,20 @@ token; pairing again replaces it).
 ## 1. Find the device
 
 ```bash
+curl -4 -fsS --max-time 6 http://tarvis.local/api/agent/discover
 curl -4 -fsS --max-time 6 http://soljacast.local/api/agent/discover
 ```
 
-Several boxes on one network cannot share a name, so each takes the first free
-one at boot. If that is silent, probe the numbered names before asking anyone
-anything:
+A Personal-plan box answers to both; Lite and older boxes only to
+`soljacast.local`. Several boxes on one network cannot share a name, so each
+takes the first free one at boot. If both are silent, probe the numbered names
+before asking anyone anything:
 
 ```bash
 for n in 1 2 3 4 5; do
-  curl -4 -fsS --max-time 3 "http://soljacast$n.local/api/agent/discover" && break
+  for base in tarvis soljacast; do
+    curl -4 -fsS --max-time 3 "http://$base$n.local/api/agent/discover" && break 2
+  done
 done
 ```
 
