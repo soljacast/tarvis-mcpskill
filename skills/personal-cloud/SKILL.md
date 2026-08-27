@@ -1,6 +1,6 @@
 ---
 name: personal-cloud
-description: Use a Tarvis device as the user's personal cloud — install and run self-hosted apps (Uptime Kuma, Vaultwarden, any Coolify template or docker-compose), schedule recurring agent tasks that watch things and cast results to the screen, and store secrets for those tasks. Triggers on "run X on my box", "self-host X", "install X on the device", "watch this site and show changes on the TV", "morning summary on the screen", "schedule a task on the device". Only available when the token was approved with VM access.
+description: Use a Tarvis device as the user's personal cloud — install and run self-hosted apps (Uptime Kuma, Vaultwarden, any Coolify template or docker-compose), schedule recurring agent tasks that watch things and cast results to the screen, and store secrets that apps, tasks and coding sessions pick up as env vars. Triggers on "run X on my box", "self-host X", "install X on the device", "watch this site and show changes on the TV", "morning summary on the screen", "schedule a task on the device". Only available when the token was approved with VM access.
 ---
 
 # The device as a personal cloud
@@ -188,10 +188,27 @@ logged in. The device never stores the account password.
 
 ## Secrets
 
-`secret_set` stores a value encrypted on the device; reference it by name in
-`task_create`'s `secrets` and it is exported as an env var inside the run.
-Values are write-only — `secret_list` returns names, nothing returns a value,
-and `secret_delete` removes one.
+`secret_set` stores a value encrypted on the device and says where it is
+injected as an env var: `domain` is `app`, `task` or `session`, and `target`
+names one of them. **Omit `target` and it reaches every one in that domain,
+including ones created later** — so a key for a single app needs its name, or
+every container on the box can read it.
+
+When it takes effect differs by domain, and the reply tells you:
+
+- **task** — the next run has it. Nothing to restart.
+- **app** — the device rewrites that app's env and restarts it, then reports
+  which apps it restarted.
+- **session** — a session reads its environment only when it launches, so it
+  needs a relaunch: `coding_agent_sleep` then `coding_agent_wake`. Waking a
+  session that is still running only reattaches, so the sleep is what makes the
+  new value arrive. The workspace and the agent's conversation survive.
+
+A task may still name secrets in `task_create`'s `secrets` list; that and the
+domain compose, so an older task keeps working.
+
+Values are write-only — `secret_list` returns each name with where it applies,
+nothing returns a value, and `secret_delete` removes one.
 
 ## The user's view
 
