@@ -120,7 +120,8 @@ sit on a prompt or a private clone fail.
 **Git.** `github_connect` returns a code and a URL — relay both, the user
 approves in their browser, poll `git_status` until connected. Other hosts
 (GitLab, Bitbucket, Gitea, self-hosted) take a personal access token the user
-enters in the device admin panel; never ask for a token in chat. Once
+enters in the device admin panel; never ask for a token in chat.
+`git_disconnect` drops a host again, on the user's say-so. Once
 connected, every VM has working git: `~/.config/tarvis/git-hosts.json` lists
 the hosts, the matching CLI (gh, glab, tea) is installed and token env vars
 are set, so use the provider's own commands for PRs. Private repos then clone

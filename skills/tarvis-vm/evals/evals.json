@@ -86,7 +86,7 @@
             "expected_output": "github_connect code and URL relayed; status polled until connected.",
             "expectations": [
                 "Calls github_connect and relays user_code + verification_url to the user",
-                "Polls github_status rather than assuming approval",
+                "Polls git_status rather than assuming approval",
                 "Never asks the user to paste a token"
             ]
         },
