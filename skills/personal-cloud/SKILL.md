@@ -54,7 +54,9 @@ keep it a short lowercase label. Data lives on the encrypted data partition.
   while the app itself may still be migrating a database. Poll the URL until
   it answers 200 before you cast it to a screen or hand it over.
 - `app_list` / `app_start` / `app_stop` / `app_logs` / `app_remove`.
-- `app_compose_get` reads the current compose and env; `app_update` changes
+- `app_compose_get` reads the current compose and `env_keys` (variable names
+  only). It omits all `.env` values; preserve `${NAME}` references when editing.
+  `app_update` changes
   compose while retaining data; `app_restart` restarts without reinstalling.
 - `app_source_fetch` clones an HTTPS repo (optional `branch`) or snapshots a
   coding `workspace`. Re-fetching replaces prior source. `app_source_read`
@@ -159,7 +161,8 @@ domain, including future ones. Set the narrow target the user intends.
 `secret: true` is the default: encrypted at rest, omitted from `secret_list`,
 and redacted in run logs. This is not isolation from an agent authorized to
 read app configuration or execute code in a runtime receiving that secret.
-`app_compose_get` returns user-app environment values, which may contain credentials. Never echo the submitted value. `secret: false` stores a var whose
+`app_compose_get` omits `.env` values and returns their names only. Compose YAML
+is returned as written, so credentials manually embedded in YAML remain visible. Never echo the submitted value. `secret: false` stores a var whose
 value is visible through `secret_list` and in logs. `secret_list` reports names,
 domains, targets and secrecy flags; only vars return values. `secret_delete`
 removes an entry by name. Setting or deleting app configuration reloads affected
