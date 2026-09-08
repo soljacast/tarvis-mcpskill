@@ -10,6 +10,7 @@ and maintain assistant chats for the user.
 Everything survives reboots. These tools appear only when the token was
 approved with **Allow VMs & coding agents** and the device has the runtimes
 installed; if a tool is missing, inspect the advertised catalog before using it.
+Device-owned internal services cannot be targeted with user app tools.
 Chat management requires an external device token with VM access; internal
 chat/task tokens and domain-scoped tokens do not expose `chat_*`.
 
@@ -25,8 +26,10 @@ the device, `tailscale_url` (the same label on the tailnet name). Both are real
 https names covered by the device's own wildcard certificate; the device routes
 them to the right port itself, so a new app is reachable over https the moment
 it starts — no DNS or certificate step to run, and nothing to ask the user for.
-The rule never changes: **on the same Wi-Fi as the box use `url`; anywhere else
-use `tailscale_url`.** Hand the user whichever matches where they are, or both.
+For a local device, use `url` on its LAN and `tailscale_url` for remote access
+when Tailscale is configured. Cloud deployments may expose a reachable public
+`url`. Use the addresses returned by the device and the user's connectivity;
+do not assume every deployment requires the same Wi-Fi.
 
 Never assemble these names yourself — read them from the tool's reply or
 `device_status`. Until the device's domain is active (fresh pairing, no cert
@@ -75,17 +78,13 @@ in under ten seconds, a large multi-service one takes minutes and can return
 while layers are still coming down. Check `app_list` and read `app_logs`
 before declaring failure; a retry of `app_start` resumes from cached layers.
 
-**These devices are arm64, so pick images that are.** An x86-only image
-installs cleanly, then dies the instant it execs — nothing retries it, and no
-amount of restarting helps. Prefer a multi-arch image, and when a template
-pins one that isn't (CyberChef's own `ghcr.io/gchq/cyberchef` is x86-only, for
-instance), write the compose yourself against an image that publishes arm64 —
-`mpepping/cyberchef` in that case. Docker Hub's tag list shows the
-architectures.
+Use images matching the deployment architecture: physical devices commonly use
+arm64, while cloud workspaces may use amd64. Prefer multi-architecture images;
+do not assume an ARM-only image will run on a VPS (or the reverse).
 
 `app_list` reports `last_error` for an app that is meant to be running and
 isn't, and the app's own URL says the same thing rather than a bare port
-error. Read it before guessing: it names the arm64 case outright.
+error. Read it before guessing; image architecture mismatches need a compatible image.
 
 ### Monitor what you host — in the background, never by stalling
 
@@ -157,8 +156,10 @@ complete login once and future runs retain it.
 `target` selects one named app/task/session; omit it for every resource in that
 domain, including future ones. Set the narrow target the user intends.
 
-`secret: true` is the default: encrypted at rest, write-only, and redacted in
-run logs. Never echo the submitted value. `secret: false` stores a var whose
+`secret: true` is the default: encrypted at rest, omitted from `secret_list`,
+and redacted in run logs. This is not isolation from an agent authorized to
+read app configuration or execute code in a runtime receiving that secret.
+`app_compose_get` returns user-app environment values, which may contain credentials. Never echo the submitted value. `secret: false` stores a var whose
 value is visible through `secret_list` and in logs. `secret_list` reports names,
 domains, targets and secrecy flags; only vars return values. `secret_delete`
 removes an entry by name. Setting or deleting app configuration reloads affected
