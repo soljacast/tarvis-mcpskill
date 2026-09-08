@@ -61,7 +61,7 @@ keep it a short lowercase label. Data lives on the encrypted data partition.
   enable it when requested.
 - `app_storage` reports disk usage; `app_backups` lists configured backup jobs;
   `app_backup_run` starts one by name. Backups can stop covered apps temporarily.
-  Destination changes and restores use the admin Backups dialog.
+  See Backups below for configuration, schedules and restores.
 
 Writing compose yourself: images or `build: {context: ./src}` using source
 fetched with `app_source_fetch`; no privileged containers,
@@ -110,7 +110,9 @@ is what watches it stay up.
 ## Scheduled tasks
 
 Use `task_list` to inspect existing prompts, schedules, workspaces and the last
-run before creating or changing a task. Runs execute in a sandbox and continue
+run before creating or changing a task. It also returns explicit `secrets`
+(names only) and `catch_up_on_boot`, so those settings can be inspected before
+editing. Runs execute in a sandbox and continue
 in the background. A cloud workspace has no display; include casting only on
 a device with a screen.
 
@@ -162,13 +164,76 @@ domains, targets and secrecy flags; only vars return values. `secret_delete`
 removes an entry by name. Setting or deleting app configuration reloads affected
 apps automatically; tasks pick it up on their next run, sessions on restart.
 
+## Backups
+
+`app_backups` returns job IDs, configuration with stored credentials redacted,
+engine readiness, current activity and the last restore result.
+
+- `app_backup_create` takes `name`, `apps` (names), `destination` and optional
+  `schedule`. A schedule has `kind: off`, `daily` with `daily_at` and `timezone`,
+  or `interval` with `interval_minutes` (minimum 15). Defaults: schedule off,
+  `encrypt: true`, `stop_apps: true` for consistent data.
+- `destination` contains `kind` and string-valued `fields`. Inspect the tool
+  schema for required fields: local folder, S3, B2, WebDAV, SFTP and drive
+  destinations are supported. A local folder is a plain name within managed
+  backup storage, not an arbitrary host path. `app_backup_destination_test`
+  verifies connectivity and may create the destination folder.
+- Drive sign-in: `app_backup_oauth_start` takes `kind` googledrive, onedrive or
+  dropbox. Give its login URL to the user. After approval,
+  `app_backup_oauth_fetch` takes the returned token and reports pending or a
+  one-time `authid`; put that in destination fields without echoing it.
+- Encrypted creation returns the supplied or generated recovery passphrase.
+  Preserve it securely for the user. Stored destination credentials and
+  passphrases have no readback tool. Encryption/passphrase changes after the
+  first backup require a new job.
+- `app_backup_update` takes `id` and the fields to change. Omitted settings are
+  retained; a supplied `schedule` replaces the schedule object. Omitting the
+  destination or leaving its stored secret fields blank preserves credentials.
+- `app_backup_prepare` prepares the engine in the background. `app_backup_run`
+  starts an existing job by **name**; other management tools use its **id**.
+  Read `app_backups` for progress and results.
+- Restore: `app_backup_versions` takes `id`; `app_backup_version_apps` takes
+  `id` and the exact returned `time`. `app_backup_restore` takes `id`, `time`
+  and `apps: [{name, as_new?}]`. Omitting `as_new` overwrites existing app data;
+  supplying it creates a new app with that name. Use the destination the user
+  authorized. Restore starts in the background; check `app_backups` for its
+  final result before reporting success.
+- `app_backup_delete` removes the job by `id`, keeping destination files by
+  default. Set `delete_remote: true` only when the user requested removal of
+  the backup files too.
+
 ## Notifications
 
-`notify_channels` lists available delivery channels. `notify_send` sends a
-notification using the tool's schema. Task runs can omit the channel to use
-the task's configured channel or the owner's default. With no channel available,
-report that delivery is unavailable. Add ongoing monitoring or notifications
-when the user's request includes them.
+`notify_channels` lists channel names/types, the default, hourly limits and
+recent delivery health; credentials are not returned. `notify_services`
+discovers the engine's supported services and configuration fields.
+
+- `notify_channel_add` takes `name` and an Apprise `url`, adding or replacing
+  the channel. The first channel becomes default. Store credential-bearing
+  URLs without echoing them.
+- `notify_channel_default` chooses a default by `name`;
+  `notify_channel_limit` sets `max_per_hour` (non-negative; zero restores the
+  service default). `notify_channel_delete` removes the named channel.
+- `notify_channel_test` sends a real test message, bypassing deduplication and
+  hourly limits. Use it to verify a requested setup, not as a retry bypass.
+- `notify_send` sends ordinary notifications using the tool's schema. Task
+  runs can omit the channel to use the task's channel or the owner's default.
+  If setup is needed and authorized, configure a channel; otherwise explain
+  what is missing. Add ongoing monitoring when the user's request includes it.
+
+## Choosing agents, models and repositories
+
+`agent_list` shows configured agents, sign-in status, headless commands and
+credential variable names, without credential values. `agent_models` lists
+models for a configured `agent`; `agent_auth_status` checks its authentication.
+For a new provider, use `provider_list` then `provider_models` with `provider_id`
+or a compatible `base_url`/`npm` and optional `key`. Discovery stores nothing;
+configure the chosen agent using `coding_agent_configure`.
+
+`git_status` shows connected Git hosts. `git_repos` lists accessible
+repositories, reporting partial host failures alongside successful results.
+`git_branches` takes `host` and `repo` (owner/project). Use these to select a
+real source branch before fetching app source or starting a coding session.
 
 ## Device assistant chats
 

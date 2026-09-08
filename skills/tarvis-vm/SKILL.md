@@ -34,11 +34,35 @@ asleep, so several can coexist on an 8 GB box.
   pass `status: "working"` to return as soon as output starts instead.
 - `coding_agent_sleep` / `coding_agent_wake` — park a session's VM to free RAM
   and bring it back later.
-- `coding_workspace_remove` — delete a session's workspace for good.
+- `coding_session_model` — change an existing session's model using `name`
+  and `model`; choose from `agent_models`.
+- `coding_session_restart` — restart by `name` to pick up changed environment
+  or credentials, preserving the workspace and resuming the conversation.
+- `coding_session_delete` — delete by `name`, including the container, session
+  record and workspace. If another session shares the workspace, its files
+  remain until that session is also deleted. Use sleep/wake to preserve work
+  for later; there is no separate delete-record-only option.
+- `coding_workspace_remove` — remove a workspace directly; use session deletion
+  when removing a session and its associated data.
 
 `read`, `send` and `wait` name the session `target`; `sleep`, `wake`,
 `save_login` and `workspace_remove` call it `name`. Either key works on any of
 them, and `target` also takes a pane id from `coding_sessions`.
+
+## Discovering agents, models and repositories
+
+Use `agent_list` to inspect configured agents and sign-in status, then
+`agent_models` with `agent` to list its models or `agent_auth_status` to check
+its credentials. `provider_list` and `provider_models` discover new providers
+and models before `coding_agent_configure`; discovery stores no configuration.
+
+`git_repos` lists repositories accessible through connected hosts, including
+partial errors. `git_branches` takes `host` and `repo` (owner/project); choose
+an actual branch from that result. Missing connections use the existing
+GitHub browser approval flow or the device's Git-host settings.
+
+The session management tools require a token with VM access and no
+apps/tasks domain restriction. Inspect the advertised catalog on older devices.
 
 ## Starting a session
 

@@ -107,6 +107,55 @@
                 "Uses task_update with self_heal=false",
                 "Does not set enabled=false or delete the task"
             ]
+        },
+        {
+            "id": 12,
+            "prompt": "Show which secrets my rentals task uses and whether it catches up after reboot.",
+            "expected_output": "The requested management workflow completed through the available device tools.",
+            "expectations": [
+                "Reads task_list secrets and catch_up_on_boot; does not infer omitted values",
+                "Does not fetch secret values"
+            ]
+        },
+        {
+            "id": 13,
+            "prompt": "Set up an ntfy alerts channel for my task and send a test.",
+            "expected_output": "The requested management workflow completed through the available device tools.",
+            "expectations": [
+                "Uses notify_channel_add then notify_channel_test",
+                "Reads notify_channels for delivery health",
+                "Does not echo credential-bearing URLs"
+            ]
+        },
+        {
+            "id": 14,
+            "prompt": "Change my existing nightly backup to every hour and keep everything else.",
+            "expected_output": "The requested management workflow completed through the available device tools.",
+            "expectations": [
+                "Finds the job ID with app_backups",
+                "Calls app_backup_update with schedule kind=interval and interval_minutes=60",
+                "Does not resubmit or overwrite destination credentials"
+            ]
+        },
+        {
+            "id": 15,
+            "prompt": "Restore yesterday\u2019s notes backup into a separate app named notes-recovered.",
+            "expected_output": "The requested management workflow completed through the available device tools.",
+            "expectations": [
+                "Lists versions and apps before selecting the restore point",
+                "Uses app_backup_restore with as_new=notes-recovered",
+                "Treats acceptance as background work and reads app_backups for the result"
+            ]
+        },
+        {
+            "id": 16,
+            "prompt": "Which models can my configured agent use, and which branches exist in acme/app?",
+            "expected_output": "The requested management workflow completed through the available device tools.",
+            "expectations": [
+                "Uses agent_models for the configured agent",
+                "Uses git_repos and git_branches with the connected host",
+                "Does not request a new API key for an already configured agent"
+            ]
         }
     ]
 }

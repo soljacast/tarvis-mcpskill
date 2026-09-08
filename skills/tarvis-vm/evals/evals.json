@@ -99,6 +99,16 @@
                 "Offers coding_agent_save_login after a first sign-in so new sessions start authenticated",
                 "Configures login_paths on the agent when missing"
             ]
+        },
+        {
+            "id": 11,
+            "prompt": "I am done with the fixer session. Delete it and its files.",
+            "expected_output": "Session and unshared workspace removed.",
+            "expectations": [
+                "Uses coding_session_delete with name=fixer",
+                "Explains a shared workspace remains for its other session",
+                "Does not offer deleting only the session record as a way to preserve resumable work"
+            ]
         }
     ],
     "trigger_set": {
