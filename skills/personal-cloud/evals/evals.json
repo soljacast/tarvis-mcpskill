@@ -30,7 +30,7 @@
                 "Checks a configured agent with a headless command exists, or configures one with the user",
                 "Uses schedule=interval with interval_minutes, not a bespoke loop",
                 "Writes a task prompt that includes casting the result to a screen",
-                "Tests with task_run_now and checks task_runs before reporting success"
+                "Recognizes creation queues the first run; checks task_runs without starting a duplicate run or claiming completion"
             ]
         },
         {
@@ -59,6 +59,102 @@
             "expectations": [
                 "Calls device_status and reads apps, tasks and coding_sessions from it",
                 "Reports paused tasks (enabled=false) and last run outcomes, not just names"
+            ]
+        },
+        {
+            "id": 7,
+            "prompt": "Stop the current rentals task run but keep its schedule. Show me its log.",
+            "expected_output": "Current run stopped, schedule retained, and its log read.",
+            "expectations": [
+                "Uses task_stop, not task_delete or enabled=false",
+                "Uses task_runs to obtain a run ID, then task_run_log"
+            ]
+        },
+        {
+            "id": 8,
+            "prompt": "Set LOG_LEVEL=debug for just my dashboard app as a non-secret variable.",
+            "expected_output": "Targeted readable var stored for the app.",
+            "expectations": [
+                "Uses secret_set with domain=app, target=dashboard and secret=false",
+                "Explains that affected app configuration is reloaded"
+            ]
+        },
+        {
+            "id": 9,
+            "prompt": "Continue my device Tasks assistant conversation with: check why rentals failed.",
+            "expected_output": "Message sent to the existing fixed Tasks chat.",
+            "expectations": [
+                "Uses chat_list or chat_history to inspect the tasks chat",
+                "Calls chat_send with id=tasks",
+                "Treats accepted message as pending and reads chat_history for the eventual reply"
+            ]
+        },
+        {
+            "id": 10,
+            "prompt": "Deploy this repository on my box and inspect the Dockerfile first.",
+            "expected_output": "App source fetched and inspected before deploying compose with a source build.",
+            "expectations": [
+                "Uses app_source_fetch and app_source_read",
+                "Allows build context ./src",
+                "Checks app_list phase and last_error before claiming readiness"
+            ]
+        },
+        {
+            "id": 11,
+            "prompt": "Disable automatic repair for my rentals task but leave it running on schedule.",
+            "expected_output": "Automatic task repair disabled without pausing the schedule.",
+            "expectations": [
+                "Uses task_update with self_heal=false",
+                "Does not set enabled=false or delete the task"
+            ]
+        },
+        {
+            "id": 12,
+            "prompt": "Show which secrets my rentals task uses and whether it catches up after reboot.",
+            "expected_output": "The requested management workflow completed through the available device tools.",
+            "expectations": [
+                "Reads task_list secrets and catch_up_on_boot; does not infer omitted values",
+                "Does not fetch secret values"
+            ]
+        },
+        {
+            "id": 13,
+            "prompt": "Set up an ntfy alerts channel for my task and send a test.",
+            "expected_output": "The requested management workflow completed through the available device tools.",
+            "expectations": [
+                "Uses notify_channel_add then notify_channel_test",
+                "Reads notify_channels for delivery health",
+                "Does not echo credential-bearing URLs"
+            ]
+        },
+        {
+            "id": 14,
+            "prompt": "Change my existing nightly backup to every hour and keep everything else.",
+            "expected_output": "The requested management workflow completed through the available device tools.",
+            "expectations": [
+                "Finds the job ID with app_backups",
+                "Calls app_backup_update with schedule kind=interval and interval_minutes=60",
+                "Does not resubmit or overwrite destination credentials"
+            ]
+        },
+        {
+            "id": 15,
+            "prompt": "Restore yesterday\u2019s notes backup into a separate app named notes-recovered.",
+            "expected_output": "The requested management workflow completed through the available device tools.",
+            "expectations": [
+                "Lists versions and apps before selecting the restore point",
+                "Uses app_backup_restore with as_new=notes-recovered",
+                "Treats acceptance as background work and reads app_backups for the result"
+            ]
+        },
+        {
+            "id": 16,
+            "prompt": "Which models can my configured agent use, and which branches exist in acme/app?",
+            "expected_output": "The requested management workflow completed through the available device tools.",
+            "expectations": [
+                "Uses agent_models for the configured agent",
+                "Uses git_repos and git_branches with the connected host",
+                "Does not request a new API key for an already configured agent"
             ]
         }
     ]

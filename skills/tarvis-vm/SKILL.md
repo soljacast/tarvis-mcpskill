@@ -1,21 +1,19 @@
 ---
 name: tarvis-vm
-description: Run a coding agent inside a sandboxed micro-VM on a Tarvis device — clone a repo, start Claude Code or another agent on the box, read its output, and send it input. Use when the user wants work running on the device itself rather than on their laptop. Triggers on "start a coding agent on the box", "run this in a VM on the device", "spin up a sandbox and clone X", "what is the agent on the device doing", "reply to the agent session". Only available when the token was approved with VM access.
+description: Run a coding agent inside a sandbox on a Tarvis device — clone a repo, start Claude Code or another agent on the box, read its output, and send it input. Use when the user wants work running on the device itself rather than on their laptop. Triggers on "start a coding agent on the box", "run this in a VM on the device", "spin up a sandbox and clone X", "what is the agent on the device doing", "reply to the agent session". Only available when the token was approved with VM access.
 ---
 
 # Sandboxed coding agents on the device
 
-The device runs coding agents inside microVMs — podman with the `krun`
-(libkrun) runtime, one VM per session, each with its own guest kernel. These
-tools appear only when the token was approved with **Allow VMs & coding
-agents** and the runtime is installed. If `coding_*` tools are missing, say so
-— don't try to work around it.
+Coding agents run in sandboxed sessions. Devices with KVM can use libkrun
+microVMs; cloud hosts without KVM can use gVisor (`runsc`). The runtime reports
+its isolation mode; do not describe gVisor as a VM with its own guest kernel.
+These tools appear only when the token was approved with **Allow VMs & coding
+agents** and a supported runtime is installed. If `coding_*` tools are missing,
+inspect the catalog and report the missing capability.
 
-**Agents always run inside the VM, never on the device host.** That is the whole
-security model. Nothing here gives you a shell on the box.
-
-A session costs roughly 350 MB of device RAM while running and nothing while
-asleep, so several can coexist on an 8 GB box.
+Commands run inside the session sandbox. These tools do not provide a host shell.
+Memory use and startup time vary by runtime, agent and workload.
 
 ## The tools
 
@@ -34,16 +32,41 @@ asleep, so several can coexist on an 8 GB box.
   pass `status: "working"` to return as soon as output starts instead.
 - `coding_agent_sleep` / `coding_agent_wake` — park a session's VM to free RAM
   and bring it back later.
-- `coding_workspace_remove` — delete a session's workspace for good.
+- `coding_session_model` — change an existing session's model using `name`
+  and `model`; choose from `agent_models`.
+- `coding_session_restart` — restart by `name` to pick up changed environment
+  or credentials, preserving the workspace and resuming the conversation.
+- `coding_session_delete` — delete by `name`, including the container, session
+  record and workspace. If another session shares the workspace, its files
+  remain until that session is also deleted. Use sleep/wake to preserve work
+  for later; there is no separate delete-record-only option.
+- `coding_workspace_remove` — remove a workspace directly; use session deletion
+  when removing a session and its associated data.
 
 `read`, `send` and `wait` name the session `target`; `sleep`, `wake`,
 `save_login` and `workspace_remove` call it `name`. Either key works on any of
 them, and `target` also takes a pane id from `coding_sessions`.
 
+## Discovering agents, models and repositories
+
+Use `agent_list` to inspect configured agents and sign-in status, then
+`agent_models` with `agent` to list its models or `agent_auth_status` to check
+its credentials. `provider_list` and `provider_models` discover new providers
+and models before `coding_agent_configure`; discovery stores no configuration.
+
+`git_repos` lists repositories accessible through connected hosts, including
+partial errors. `git_branches` takes `host` and `repo` (owner/project); choose
+an actual branch from that result. Missing connections use the existing
+GitHub browser approval flow or the device's Git-host settings.
+
+The session management tools require a token with VM access and no
+apps/tasks domain restriction. Inspect the advertised catalog on older devices.
+
 ## Starting a session
 
 Give it a `name` (the workspace key), the configured `agent`, and optionally a
-`repo` and `branch` — a repo with no branch lands on `master`.
+`repo` and `branch`. Use `git_branches` to choose the intended branch; do not
+assume the repository uses `master`.
 
 **The reply tells you what actually happened**, because the VM writes its own
 status: *ready* means git, the clone and the agent are all up and you can start
@@ -107,7 +130,9 @@ verify its own dev server — click flows, DOM assertions, screenshots — witho
 touching any browser outside the sandbox. `"chromium"` selects full Chromium
 instead when pixel-accurate rendering matters — heavier, and it reinstalls on
 each wake. Each session's browser is fully isolated:
-cookies and logins never leak between sessions or to the device.
+browser state stays in its workspace. Sessions explicitly sharing a workspace
+share its persisted state. Configured agent login files are separately saved
+on the device and seeded into later sessions.
 
 ## Two logins, each asked for once
 
@@ -134,8 +159,8 @@ saves that login by itself and seeds every later session with it —
 wait for the sweep. A revoked or expired login is the same story: sign in once
 more in any session.
 
-Neither login is ever asked for twice. If one is missing, the fix is the
-one-time flow above, not a workaround.
+Saved logins are reused while valid. If one is missing or expired, use the
+corresponding sign-in flow again.
 
 ## Sessions belong to the device
 
@@ -144,7 +169,7 @@ later paired agent finds it by name in `coding_sessions` and reattaches with
 `read`/`send`. This is how a heavy Claude Code session runs on the device
 instead of a struggling laptop.
 
-Idle sessions sleep automatically after ~30 minutes of unchanged output
+Idle sessions sleep automatically after six hours of unchanged output
 (`sleep_after_min` on start overrides; `-1` never). A sleeping session costs no
 RAM; `coding_agent_wake` — or simply `coding_agent_send` — relaunches it in the
 same workspace with the agent's `resume` flag, restoring the conversation.
@@ -175,9 +200,9 @@ anything they type shows up in your next `read`.
 Give `coding_agent_start` room before the first read, and prefer
 `coding_agent_wait` over a tight read loop.
 
-If everything is unusably slow, the device is likely falling back to software
-emulation because `/dev/kvm` is missing. Mention it — that's a device setup
-problem, not something to retry through.
+If startup is slow, inspect session output and the reported runtime before
+diagnosing it. A cloud host without `/dev/kvm` can use gVisor; its absence alone
+is not evidence of software emulation.
 
 ## Showing the work
 
