@@ -43,7 +43,7 @@ that reads like a bug in the device.
 
 Two things are being decided. Take the defaults unless the user says otherwise:
 **how long** access lasts, which is 7 days, and whether to allow **VMs and
-coding agents** (the `coding_*` tools), which is yes.
+coding agents** (coding sessions, apps, tasks, secrets and assistant chats), which is yes.
 
 The device is on their own network and this is its own password, so the quickest
 path is to ask for it and approve the request yourself. Say that it will pass
@@ -133,3 +133,9 @@ network. Say so plainly rather than attempting a workaround.
 `curl -fsSL https://tarvis.io/install.sh | bash -s -- --client claude-desktop`
 from a terminal, then restart the app. The script is also the quickest way to
 configure Cursor and Codex in one pass.
+
+
+For personal-cloud operations after pairing, load the maintained
+[personal-cloud skill](https://raw.githubusercontent.com/soljacast/tarvis-mcpskill/master/skills/personal-cloud/SKILL.md).
+It covers tasks, run logs and files, secrets/vars, app lifecycle and source builds,
+and device assistant chats. Inspect `tools/list` for the device's actual capabilities.

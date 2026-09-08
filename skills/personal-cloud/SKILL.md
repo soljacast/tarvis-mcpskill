@@ -1,14 +1,17 @@
 ---
 name: personal-cloud
-description: Use a Tarvis device as the user's personal cloud — install and run self-hosted apps (Uptime Kuma, Vaultwarden, any Coolify template or docker-compose), schedule recurring agent tasks that watch things and cast results to the screen, and store secrets for those tasks. Triggers on "run X on my box", "self-host X", "install X on the device", "watch this site and show changes on the TV", "morning summary on the screen", "schedule a task on the device". Only available when the token was approved with VM access.
+description: Manage self-hosted apps, scheduled agent tasks, secrets and vars, and device assistant chats on a Tarvis device or cloud workspace. Use for installing or repairing an app, changing a task schedule, inspecting runs and workspace files, managing injected configuration, or continuing a device chat. Requires a paired token with VM access.
 ---
 
 # The device as a personal cloud
 
-A paired Tarvis box can host apps and run scheduled agent tasks for the user.
+A paired Tarvis device or cloud workspace can host apps, run scheduled agent tasks,
+and maintain assistant chats for the user.
 Everything survives reboots. These tools appear only when the token was
 approved with **Allow VMs & coding agents** and the device has the runtimes
-installed; if `app_*`/`task_*` tools are missing, say so.
+installed; if a tool is missing, inspect the advertised catalog before using it.
+Chat management requires an external device token with VM access; internal
+chat/task tokens and domain-scoped tokens do not expose `chat_*`.
 
 **Start with `device_status`.** For VM-scoped tokens it inventories what the
 box is already running — hosted apps with URLs, scheduled tasks with their
@@ -48,8 +51,20 @@ keep it a short lowercase label. Data lives on the encrypted data partition.
   while the app itself may still be migrating a database. Poll the URL until
   it answers 200 before you cast it to a screen or hand it over.
 - `app_list` / `app_start` / `app_stop` / `app_logs` / `app_remove`.
+- `app_compose_get` reads the current compose and env; `app_update` changes
+  compose while retaining data; `app_restart` restarts without reinstalling.
+- `app_source_fetch` clones an HTTPS repo (optional `branch`) or snapshots a
+  coding `workspace`. Re-fetching replaces prior source. `app_source_read`
+  and `app_source_write` inspect and edit source files, including a Dockerfile.
+  Builds run in the background: check `app_list` phase and `last_error`.
+  `app_autoupdate` enables or disables deploy-on-push for repo-sourced apps;
+  enable it when requested.
+- `app_storage` reports disk usage; `app_backups` lists configured backup jobs;
+  `app_backup_run` starts one by name. Backups can stop covered apps temporarily.
+  Destination changes and restores use the admin Backups dialog.
 
-Writing compose yourself: images only (no `build:`), no privileged containers,
+Writing compose yourself: images or `build: {context: ./src}` using source
+fetched with `app_source_fetch`; no privileged containers,
 no host paths — bind mounts must be relative (they land in the app's own data
 dir), named volumes are fine. Published ports are reallocated by the device;
 the install result tells you where the app actually listens. `app_remove`
@@ -80,7 +95,7 @@ working and let something else watch it:
 - **Bring-up:** run the wait in a background process on your side (a shell
   loop curling the app URL until 200, or your harness's background/monitor
   facility) and report to the user when it flips. Your main loop stays free.
-- **Ongoing health:** make monitoring durable on the device itself, not in
+- **Ongoing health:** when requested, make monitoring durable on the device itself, not in
   your session. Two device-native options:
   - If Uptime Kuma (or similar) is hosted on the box, add the new app's URL
     as a monitor there — the device then watches itself 24/7.
@@ -94,41 +109,104 @@ is what watches it stay up.
 
 ## Scheduled tasks
 
-A task runs a headless coding agent inside a sandboxed VM on a schedule. The
-run gets this device's own MCP tools (a scoped short-lived token is minted per
-run), so the prompt can end with "cast a summary to screen 1" and the agent
-does it. Typical uses: watch a listings page and show changes on the TV, or a
-morning digest at 07:30.
+Use `task_list` to inspect existing prompts, schedules, workspaces and the last
+run before creating or changing a task. Runs execute in a sandbox and continue
+in the background. A cloud workspace has no display; include casting only on
+a device with a screen.
 
-- The task's `agent` must be registered via `coding_agent_configure` with a
-  `headless` command template — for Claude Code:
-  `claude -p {prompt} --mcp-config /workspace/.tarvis-mcp.json --dangerously-skip-permissions`
-- `task_create` — name, prompt, agent, then `schedule: interval` with
-  `interval_minutes` (min 5) or `schedule: daily` with `daily_at` and
-  `timezone`. `screen` picks the display. Missed runs while powered off run
-  once at boot unless `catch_up_on_boot: false`.
-- `task_run_now` tests it immediately; `task_runs` shows outcomes and the
-  latest log tail. `task_update` with `enabled: false` pauses. Create a new task
-  with `enabled: false`, prove it with `task_run_now`, then enable it — a broken
-  prompt otherwise fails quietly on a schedule nobody is watching.
+- `task_create`: `name`, `prompt`, optional `agent` and `workspace`;
+  `schedule: interval` with `interval_minutes` (minimum 5), or `schedule: daily`
+  with `daily_at` (`HH:MM`) and `timezone`. The default is hourly. Omit `agent`
+  to use the built-in agent when available; other agents need a configured
+  headless command via `coding_agent_configure`.
+- Creation queues a first run automatically. Do not immediately call
+  `task_run_now` as an extra setup step. `enabled: false` pauses scheduled
+  runs; it is not a guarantee that creation performs no work.
+- `task_update` changes supplied fields; `enabled: false` pauses the schedule.
+  `catch_up_on_boot` controls catching up after downtime. `budget_minutes`
+  is 1–30 (default 10); `self_heal` controls automatic repair after failures.
+  `notify_channel` is a name from `notify_channels`, `none` for logs only,
+  or `-` on update to restore the owner's default. `secrets` lists stored
+  names exported into runs; an empty list clears the explicit selection.
+- `task_run_now` starts an additional run and returns its run ID. Report it as
+  started, then use `task_runs` to inspect progress when appropriate. Do not
+  keep a foreground turn waiting or repeatedly poll for completion.
+- `task_runs` lists statuses, attempts, result/needs and the latest log tail.
+  `task_run_log` takes `name` and `run` (ID from `task_runs`) for the full log.
+  Secret values are redacted. A closing `RESULT:` describes the outcome;
+  `NEEDS:` asks the owner for input. Queued or running is not success.
+- `task_stop` stops the active run or waiting retry, retaining the schedule.
+  Use `task_update` as well if the user wants future runs paused.
+  `task_delete` removes the task, history and workspace.
+- `task_files`, `task_file_read` and `task_file_write` access the persistent
+  task workspace by `name` and relative `path`. Writes also take `content`.
+  A run sees files at `/workspace/<path>`; your local filesystem is separate.
+- `task_memory_new` remembers observed items and returns new or changed ones.
+  `task_memory_get` / `task_memory_set` retain arbitrary JSON across runs;
+  inspect the tool schema for their fields.
 
-Each run is a fresh sandbox VM, so a trivial prompt is done in seconds and
-nothing leaks between runs except the workspace.
+Task workspaces retain `/workspace/.home` between runs. For a logged-in site,
+an interactive coding session can share the task's workspace so the user can
+complete login once and future runs retain it.
 
-## Logged-in sites without handing over credentials
+## Secrets and vars
 
-Task workspaces persist between runs (`/workspace/.home`). To watch something
-behind a login: start an interactive coding session in the task's workspace
-(`coding_agent_start` with `workspace` set to the task's workspace name), have
-the agent open the site and let the user complete the login through
-`read`/`send`, then end the session. Scheduled runs in that workspace stay
-logged in. The device never stores the account password.
+`secret_set` stores `name`, `value`, and `domain` (`app`, `task`, or `session`).
+`target` selects one named app/task/session; omit it for every resource in that
+domain, including future ones. Set the narrow target the user intends.
 
-## Secrets
+`secret: true` is the default: encrypted at rest, write-only, and redacted in
+run logs. Never echo the submitted value. `secret: false` stores a var whose
+value is visible through `secret_list` and in logs. `secret_list` reports names,
+domains, targets and secrecy flags; only vars return values. `secret_delete`
+removes an entry by name. Setting or deleting app configuration reloads affected
+apps automatically; tasks pick it up on their next run, sessions on restart.
 
-`secret_set` stores a value encrypted on the device; reference it by name in
-`task_create`'s `secrets` and it is exported as an env var inside the run.
-Values are write-only — `secret_list` returns names, nothing returns a value.
+## Notifications
+
+`notify_channels` lists available delivery channels. `notify_send` sends a
+notification using the tool's schema. Task runs can omit the channel to use
+the task's configured channel or the owner's default. With no channel available,
+report that delivery is unavailable. Add ongoing monitoring or notifications
+when the user's request includes them.
+
+## Device assistant chats
+
+Use these when the user wants to manage or talk to an assistant conversation
+on the device. Direct app/task/secret tools perform their respective operations
+without needing a chat turn.
+
+- `chat_list` returns conversation IDs, previews and working state. `apps` and
+  `tasks` are the fixed assistants.
+- `chat_create` opens a general conversation (optional `title` and `agent`).
+  For an existing coding session, pass `kind: session` and its `session` name;
+  create the coding session with the coding tools first if needed. Creation
+  alone sends nothing.
+- `chat_history` takes `id`, optional `limit` (1–200, default 60) and `before`
+  (message ID). Messages are chronological; if `has_more`, use the oldest
+  returned message's ID as `before` to read the preceding page. It also reports
+  `thinking`, available `agents`, and `terminal_open`.
+- `chat_send` takes `id` and `text`. It returns the accepted user message while
+  the assistant works in the background; read `chat_history` for the reply.
+  An open coding terminal prevents a session chat turn; the user must close it.
+- `chat_upload` takes `id`, `filename`, and base64 `data` (up to 16 MiB decoded).
+  Pass its returned `attachment` in `chat_send`'s `attachments` array for the
+  same chat. Uploading a file does not send a message.
+- `chat_rename` changes `title`. `chat_set_agent` selects an `agent` listed by
+  history; an empty string restores automatic selection.
+- `chat_cancel` stops the current turn and clears queued messages, retaining
+  history. `chat_delete` removes history and a general chat's scratch workspace;
+  a coding session's workspace stays. Fixed Apps and Tasks chats cannot be deleted.
+
+## Clients without MCP tool access
+
+The same token-scoped catalog is available over HTTP:
+`GET /api/agent/v1/tools` and `POST /api/agent/v1/tools/call`, both with
+`Authorization: Bearer <device-token>`. The call body is
+`{"name":"task_list","arguments":{}}`; substitute a listed name and its schema's
+arguments. Use these endpoints rather than admin-cookie routes. A missing tool
+can mean an older device version, insufficient token scope, or an unavailable
+service; do not assume the skill installs backend capabilities.
 
 ## The user's view
 
