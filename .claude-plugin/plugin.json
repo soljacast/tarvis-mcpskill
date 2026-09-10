@@ -2,19 +2,18 @@
   "name": "tarvis",
   "displayName": "Tarvis",
   "version": "0.2.1",
-  "description": "Cast to the screens on your Tarvis device, read and drive the web pages it shows, and run sandboxed coding agents on the box.",
+  "description": "Connect to a private Tarvis cloud workspace and use its apps, tasks, chats, and coding sessions.",
   "author": {
-    "name": "Soljacast",
-    "url": "https://github.com/soljacast"
+    "name": "Tarvis",
+    "url": "https://github.com/tarvis-io"
   },
-  "homepage": "https://github.com/soljacast/tarvis-mcpskill",
-  "repository": "https://github.com/soljacast/tarvis-mcpskill",
+  "homepage": "https://github.com/tarvis-io/tarvis-mcpskill",
+  "repository": "https://github.com/tarvis-io/tarvis-mcpskill",
   "license": "MIT",
   "keywords": [
     "tarvis",
-    "soljacast",
-    "casting",
-    "screens",
+    "workspace",
+    "tailscale",
     "mcp"
   ]
 }

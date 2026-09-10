@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Tarvis setup. Two phases so an agent can drive it without a TTY.
+# Tarvis cloud workspace setup. Two phases so an agent can drive it without a TTY.
 #
-#   install.sh                          -> phase 1: find device, request pairing
-#   install.sh --id <id> --code <code>  -> phase 2: exchange, configure, verify
+#   install.sh --workspace <url>                         -> request pairing
+#   install.sh --workspace <url> --id <id> --code <code> -> configure and verify
 #
 # Every run prints one JSON object: {phase, status, ...}. status is one of
 # ok | approval_pending | error.
 set -uo pipefail
 
-DEVICE=""; REQ_ID=""; CODE=""; CLIENT=""; JSON_ONLY=""
+WORKSPACE=""; REQ_ID=""; CODE=""; CLIENT=""; JSON_ONLY=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --device) DEVICE="${2%/}"; shift 2 ;;
+    --workspace) WORKSPACE="${2%/}"; shift 2 ;;
     --id)     REQ_ID="$2"; shift 2 ;;
     --code)   CODE="$2"; shift 2 ;;
     --client) CLIENT="$2"; shift 2 ;;
@@ -34,83 +34,79 @@ command -v curl >/dev/null || fail "preflight" "curl not found" "Install curl, t
 jget() { "$PY" -c 'import json,sys;print(json.load(sys.stdin).get(sys.argv[1],""))' "$1" 2>/dev/null; }
 jstr() { "$PY" -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$1"; }
 
-# ---------------------------------------------------------------- discovery
-discover() {
-  if [ -n "$DEVICE" ]; then
-    curl -4 -fsS --max-time 8 "$DEVICE/api/agent/discover" 2>/dev/null && return 0
-    return 1
-  fi
-  local n base out
-  # Personal-plan boxes answer to tarvis.local, every box to soljacast.local.
-  for n in "" 1 2 3 4 5; do
-    for base in tarvis soljacast; do
-      out=$(curl -4 -fsS --max-time 6 "http://$base$n.local/api/agent/discover" 2>/dev/null) || continue
-      printf '%s' "$out"; return 0
-    done
-  done
-  sweep_subnet
+# ---------------------------------------------------------- private workspace
+normalize_workspace() {
+  "$PY" -c 'import sys
+from urllib.parse import urlsplit
+raw=sys.argv[1].strip()
+if "://" not in raw:
+    raw="https://"+raw
+u=urlsplit(raw)
+host=(u.hostname or "").lower()
+if host.endswith(".ts.tarvis.site"):
+    private=host
+elif host.endswith(".tarvis.site"):
+    label=host[:-len(".tarvis.site")]
+    if not label or "." in label:
+        raise SystemExit(2)
+    private=label+".ts.tarvis.site"
+else:
+    raise SystemExit(2)
+print("https://"+private)' "$1"
 }
 
-# mDNS is blocked on plenty of guest and corporate networks. Fall back to
-# probing the local /24 in parallel; the device answers /api/agent/discover.
-SWEEP_BATCH=32   # concurrent probes; a whole /24 at once reads as a port scan
-
-sweep_subnet() {
-  local me prefix hit tmp i
-  me=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null ||
-       ip -4 -o addr show scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -1)
-  [ -z "$me" ] && return 1
-  prefix="${me%.*}"
-  tmp=$(mktemp) || return 1
-  for i in $(seq 1 254); do
-    ( curl -4 -fsS --max-time 2 "http://$prefix.$i/api/agent/discover" 2>/dev/null |
-        head -c 2000 | grep -q '"mcp_url"' && printf '%s\n' "$prefix.$i" >> "$tmp" ) &
-    # Drain each batch before starting the next, and stop as soon as one
-    # host answers so a device low in the range costs a couple of batches.
-    if [ $((i % SWEEP_BATCH)) -eq 0 ]; then
-      wait
-      [ -s "$tmp" ] && break
-    fi
-  done
-  wait
-  hit=$(head -1 "$tmp" 2>/dev/null); rm -f "$tmp"
-  [ -z "$hit" ] && return 1
-  curl -4 -fsS --max-time 5 "http://$hit/api/agent/discover" 2>/dev/null
+reorigin() {
+  "$PY" -c 'import sys
+from urllib.parse import urlsplit,urlunsplit
+raw,base=sys.argv[1],urlsplit(sys.argv[2])
+if not raw:
+    print("")
+else:
+    u=urlsplit(raw)
+    print(urlunsplit((base.scheme,base.netloc,u.path,u.query,u.fragment)))' "$1" "$2"
 }
 
-INFO=$(discover) || fail "discover" "no device found" \
-  "Tried mDNS and swept the local subnet. Ask the user for the address on the TV screen, then re-run with --device http://<addr>"
-PREFERRED=$(printf '%s' "$INFO" | jget preferred)
-[ -n "$PREFERRED" ] && DEVICE="${PREFERRED%/}"
-MCP_URL="$DEVICE/api/agent/v1/mcp"
+[ -z "$WORKSPACE" ] && fail "preflight" "workspace URL required" \
+  "Enable VPN in Tarvis workspace settings, accept the Tailscale invitation, connect Tailscale, then re-run with --workspace https://name.tarvis.site"
+WORKSPACE=$(normalize_workspace "$WORKSPACE") || fail "preflight" "invalid workspace URL" \
+  "Pass the base URL, for example https://name.tarvis.site"
+curl -fsS --max-time 10 "$WORKSPACE/health" >/dev/null 2>&1 ||
+  fail "health" "private workspace is not reachable" \
+    "Confirm VPN is enabled, the Tailscale invitation is accepted, and Tailscale is connected on this computer."
+INFO=$(curl -fsS --max-time 10 "$WORKSPACE/api/agent/discover" 2>/dev/null) ||
+  fail "discover" "workspace discovery failed" "Check Tailscale and the private workspace health endpoint."
+MCP_RAW=$(printf '%s' "$INFO" | jget mcp_url)
+[ -n "$MCP_RAW" ] || MCP_RAW="$WORKSPACE/api/agent/v1/mcp"
+MCP_URL=$(reorigin "$MCP_RAW" "$WORKSPACE")
 
 # ---------------------------------------------------------------- phase 1
 if [ -z "$CODE" ]; then
-  REQ=$(curl -4 -fsS --max-time 10 -X POST "$DEVICE/api/agent/auth/request" \
+  REQ=$(curl -fsS --max-time 10 -X POST "$WORKSPACE/api/agent/auth/request" \
         -H "Content-Type: application/json" \
         -d "{\"client_name\":$(jstr "$(hostname -s 2>/dev/null || echo agent)")}" 2>/dev/null) \
-    || fail "request" "pairing request failed" "Check the device is reachable at $DEVICE"
+    || fail "request" "pairing request failed" "Check the workspace is reachable at $WORKSPACE"
   RID=$(printf '%s' "$REQ" | jget request_id)
-  URL=$(printf '%s' "$REQ" | jget approve_url)
-  [ -z "$RID" ] && fail "request" "device returned no request id" "Update the device firmware."
+  URL=$(reorigin "$(printf '%s' "$REQ" | jget approve_url)" "$WORKSPACE")
+  [ -z "$RID" ] && fail "request" "workspace returned no request id" "Update the Tarvis workspace."
+  [ -z "$URL" ] && fail "request" "workspace returned no approval URL" "Update the Tarvis workspace."
   (command -v open >/dev/null && open "$URL" >/dev/null 2>&1) ||
     (command -v xdg-open >/dev/null && xdg-open "$URL" >/dev/null 2>&1) || true
   # A person at a terminal gets a prompt; an agent gets JSON and calls back.
   if [ -z "$JSON_ONLY" ] && [ -r /dev/tty ]; then
-    printf '\n  Open this and approve, signing in with the device admin password:\n\n    %s\n\n' "$URL" > /dev/tty
-    printf '  The device shows a short code. Type it here.\n  Code: ' > /dev/tty
+    printf '\n  Open this and approve, completing authorization in the browser:\n\n    %s\n\n' "$URL" > /dev/tty
+    printf '  The authorization page shows a short code. Type it here.\n  Code: ' > /dev/tty
     read -r CODE < /dev/tty
     if [ -n "$CODE" ]; then REQ_ID="$RID"; else
       emit "{\"phase\":\"approval\",\"status\":\"error\",\"error\":\"no code entered\",\"hint\":\"Re-run to try again.\"}" 1
     fi
   else
-  emit "{\"phase\":\"approval\",\"status\":\"approval_pending\",\"device\":$(jstr "$DEVICE"),\"request_id\":$(jstr "$RID"),\"approve_url\":$(jstr "$URL"),\"instructions\":\"Open approve_url, sign in as admin, approve, then re-run with --id and the code shown.\",\"retry\":{\"command\":$(jstr "$0 --device $DEVICE --id $RID --code <CODE>")}}"
+  emit "{\"phase\":\"approval\",\"status\":\"approval_pending\",\"workspace\":$(jstr "$WORKSPACE"),\"request_id\":$(jstr "$RID"),\"approve_url\":$(jstr "$URL"),\"instructions\":\"Open approve_url in a browser, authorize access, then re-run with the code shown.\",\"retry\":{\"command\":$(jstr "$0 --workspace $WORKSPACE --id $RID --code <CODE>")}}"
   fi
 fi
 
 # ---------------------------------------------------------------- phase 2
 [ -z "$REQ_ID" ] && fail "exchange" "--code given without --id" "Re-run phase 1 to get a request id."
-TOKEN=$(curl -4 -fsS --max-time 10 -X POST "$DEVICE/api/agent/auth/exchange" \
+TOKEN=$(curl -fsS --max-time 10 -X POST "$WORKSPACE/api/agent/auth/exchange" \
         -H "Content-Type: application/json" \
         -d "{\"request_id\":$(jstr "$REQ_ID"),\"code\":$(jstr "$CODE")}" 2>/dev/null |
         "$PY" -c 'import json,sys;d=json.load(sys.stdin);print(d.get("token") or d.get("access_token") or "")' 2>/dev/null)
@@ -148,6 +144,7 @@ esac
 
 if [ -z "$CLIENT" ] || [ "$CLIENT" = "claude-code" ]; then
   if command -v claude >/dev/null 2>&1; then
+    claude mcp remove -s user tarvis >/dev/null 2>&1 || true
     if claude mcp add -s user --transport http tarvis "$MCP_URL" \
          --header "Authorization: Bearer $TOKEN" >/dev/null 2>&1; then
       note "claude-code"
@@ -170,7 +167,7 @@ elif grep -q '^\[mcp_servers.tarvis\]' "$CODEX" 2>/dev/null; then
   skip "codex"
 fi
 
-VERIFY=$(curl -4 -fsS --max-time 10 -X POST "$MCP_URL" \
+VERIFY=$(curl -fsS --max-time 10 -X POST "$MCP_URL" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' 2>/dev/null)
 TOOLS=$(printf '%s' "$VERIFY" | "$PY" -c 'import json,sys
@@ -181,9 +178,9 @@ except Exception: print(0)' 2>/dev/null)
 
 if [ -z "$JSON_ONLY" ] && [ -w /dev/tty ]; then
   printf '\n  Connected to %s\n  %s tools available, configured: %s\n  Fully quit and reopen your client (a reload is not enough).\n\n' \
-    "$DEVICE" "$TOOLS" "$(printf '%s' "$CONFIGURED" | tr -d '\"')" > /dev/tty 2>/dev/null || true
+    "$WORKSPACE" "$TOOLS" "$(printf '%s' "$CONFIGURED" | tr -d '\"')" > /dev/tty 2>/dev/null || true
 fi
 if [ -z "$CONFIGURED" ] && [ -z "$SKIPPED" ]; then
   emit "{\"phase\":\"configure\",\"status\":\"error\",\"error\":\"no supported client found\",\"hint\":\"Add it by hand: url $MCP_URL with header 'Authorization: Bearer <token>'. The token was not printed; re-run to mint a new one.\",\"mcp_url\":$(jstr "$MCP_URL")}" 1
 fi
-emit "{\"phase\":\"done\",\"status\":\"ok\",\"device\":$(jstr "$DEVICE"),\"mcp_url\":$(jstr "$MCP_URL"),\"tools\":$TOOLS,\"configured\":[$CONFIGURED],\"already_configured\":[$SKIPPED],\"next\":\"Fully quit and reopen the client; a reload does not pick up new MCP servers.\"}"
+emit "{\"phase\":\"done\",\"status\":\"ok\",\"workspace\":$(jstr "$WORKSPACE"),\"mcp_url\":$(jstr "$MCP_URL"),\"tools\":$TOOLS,\"configured\":[$CONFIGURED],\"already_configured\":[$SKIPPED],\"next\":\"Fully quit and reopen the client; a reload does not pick up new MCP servers.\"}"

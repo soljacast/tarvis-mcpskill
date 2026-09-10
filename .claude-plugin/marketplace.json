@@ -1,15 +1,15 @@
 {
   "name": "tarvis-mcpskill",
-  "description": "Plugins for Tarvis devices: cast to their screens, drive the pages they show, and run sandboxed coding agents on the box.",
+  "description": "Skills for connecting to and operating a private Tarvis cloud workspace.",
   "owner": {
-    "name": "Soljacast",
-    "url": "https://github.com/soljacast"
+    "name": "Tarvis",
+    "url": "https://github.com/tarvis-io"
   },
   "plugins": [
     {
       "name": "tarvis",
       "source": "./",
-      "description": "Cast to your Tarvis device's screens and drive what's on them.",
+      "description": "Connect to and operate a private Tarvis cloud workspace.",
       "version": "0.2.1"
     }
   ]
