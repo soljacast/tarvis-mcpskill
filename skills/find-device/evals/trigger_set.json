@@ -1,34 +1,34 @@
 [
   {
-    "query": "find my device",
+    "query": "find my Tarvis workspace address",
     "should_trigger": true
   },
   {
-    "query": "what is the soljacast address",
+    "query": "what is the private MCP URL for war.tarvis.site",
     "should_trigger": true
   },
   {
-    "query": "connect to the casting box",
+    "query": "my Tarvis workspace URL stopped working",
     "should_trigger": true
   },
   {
-    "query": "the device url stopped working",
+    "query": "derive the Tailscale URL for my workspace",
     "should_trigger": true
   },
   {
-    "query": "is there a tarvis device on this network",
+    "query": "check whether my Tarvis workspace is reachable",
     "should_trigger": true
   },
   {
-    "query": "cast this pdf to the tv",
+    "query": "install uptime kuma in my workspace",
     "should_trigger": false
   },
   {
-    "query": "click the button on the casted page",
+    "query": "change my scheduled task",
     "should_trigger": false
   },
   {
-    "query": "what is my laptop's ip",
+    "query": "what is my laptop's IP",
     "should_trigger": false
   },
   {
@@ -36,7 +36,7 @@
     "should_trigger": false
   },
   {
-    "query": "start a coding agent on the device",
+    "query": "start a coding agent in Tarvis",
     "should_trigger": false
   }
 ]

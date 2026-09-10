@@ -1,38 +1,34 @@
 [
   {
-    "query": "connect to my tarvis",
+    "query": "connect to my Tarvis workspace",
     "should_trigger": true
   },
   {
-    "query": "set up tarvis on this machine",
+    "query": "set up Tarvis on this machine",
     "should_trigger": true
   },
   {
-    "query": "pair the device with claude code",
+    "query": "pair https://war.tarvis.site with Claude Code",
     "should_trigger": true
   },
   {
-    "query": "the tarvis tools are gone",
+    "query": "the Tarvis tools are gone",
     "should_trigger": true
   },
   {
-    "query": "tarvis says unauthorized on every call",
+    "query": "Tarvis says unauthorized on every call",
     "should_trigger": true
   },
   {
-    "query": "cast this deck to the tv",
+    "query": "install uptime kuma in my workspace",
     "should_trigger": false
   },
   {
-    "query": "what is my device's address",
+    "query": "change my scheduled task",
     "should_trigger": false
   },
   {
-    "query": "install uptime kuma on the box",
-    "should_trigger": false
-  },
-  {
-    "query": "start a coding agent on the device",
+    "query": "start a coding agent in Tarvis",
     "should_trigger": false
   }
 ]

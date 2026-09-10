@@ -3,50 +3,52 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "find my soljacast device on this network",
-      "expected_output": "The device located over mDNS and its preferred https address reported.",
+      "prompt": "What MCP address should I use for https://war.tarvis.site?",
+      "expected_output": "The private https://war.ts.tarvis.site origin derived and its health checked after Tailscale setup.",
       "expectations": [
-        "Requests http://soljacast.local/api/agent/discover first",
-        "Falls back to the numbered soljacast1..19 names if that does not answer",
-        "Reports the preferred address from the response rather than an invented one",
-        "Does not ask the user for an IP before trying discovery"
+        "Derives https://war.ts.tarvis.site without probing the local network",
+        "Guides VPN enablement and Tailscale invitation acceptance when needed",
+        "Tests /health before claiming the workspace is reachable",
+        "Uses /api/agent/discover to obtain the MCP URL"
       ]
     },
     {
       "id": 2,
-      "prompt": "the device url I saved stopped working",
-      "expected_output": "Rediscovery attempted and the current address reported, or a clear reason it cannot be found.",
+      "prompt": "My saved Tarvis workspace URL stopped working",
+      "expected_output": "The base workspace URL requested, the .ts origin derived, and VPN/Tailscale prerequisites diagnosed.",
       "expectations": [
-        "Re-runs discovery rather than only reporting the old address is down",
-        "If nothing answers, says mDNS may be blocked or the network differs, and asks for an IP",
-        "Does not retry the same failing address repeatedly"
+        "Asks for the base workspace URL",
+        "Does not invent or probe alternate workspace addresses",
+        "Checks Tailscale connectivity and the private health endpoint",
+        "Stops after two failed checks rather than looping"
       ]
     },
     {
       "id": 3,
-      "prompt": "there are two boxes in the office, which one is which",
-      "expected_output": "Both devices listed with their hostnames so the user can choose.",
+      "prompt": "Can I use https://immich.war.tarvis.site as my Tarvis MCP URL?",
+      "expected_output": "The app URL rejected in favor of the base workspace URL and its derived private origin.",
       "expectations": [
-        "Probes past soljacast.local into the numbered names",
-        "Lists each responding host with its device hostname",
-        "Asks the user to pick rather than choosing silently"
+        "Recognizes the supplied URL as an app URL rather than a base workspace URL",
+        "Requests https://war.tarvis.site",
+        "Derives https://war.ts.tarvis.site",
+        "Does not invent an MCP path before reading discovery"
       ]
     }
   ],
   "trigger_set": {
     "should_trigger": [
-      "find my device",
-      "what is the soljacast address",
-      "connect to the casting box",
-      "the device url stopped working",
-      "is there a tarvis device on this network"
+      "find my Tarvis workspace address",
+      "what is the private MCP URL for my workspace",
+      "my Tarvis workspace URL stopped working",
+      "derive the Tailscale URL for war.tarvis.site",
+      "check whether my Tarvis workspace is reachable"
     ],
     "should_not_trigger": [
-      "cast this pdf to the tv",
-      "click the button on the casted page",
-      "what is my laptop's ip",
+      "install uptime kuma in my workspace",
+      "change my scheduled task",
+      "what is my laptop's IP",
       "scan the network for open ports",
-      "start a coding agent on the device"
+      "start a coding agent in Tarvis"
     ]
   }
 }

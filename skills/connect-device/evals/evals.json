@@ -3,45 +3,50 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "connect to my tarvis device",
-      "expected_output": "The device found by probing, a pairing request raised, and the MCP server written at user scope once approved.",
+      "prompt": "connect to my Tarvis workspace at https://war.tarvis.site",
+      "expected_output": "The private workspace origin derived, VPN and Tailscale setup confirmed, health checked, browser pairing completed, and MCP configured at user scope.",
       "expectations": [
-        "Checks whether a tarvis server is already configured before pairing",
-        "Probes soljacast.local and the numbered names before asking the user for an address",
-        "Sends client_name, not name, on /api/agent/auth/request",
-        "Writes the server with `claude mcp add -s user`, never the default local scope",
-        "Verifies with a tools/list call before claiming success",
+        "Derives https://war.ts.tarvis.site from the supplied workspace URL",
+        "Guides the user to enable workspace VPN and accept the Tailscale invitation before probing",
+        "Requires the private /health endpoint to succeed before pairing",
+        "Sends client_name on /api/agent/auth/request",
+        "Opens or displays the private .ts approval URL instead of requesting credentials",
+        "Writes the server at user scope and verifies with tools/list",
         "Tells the user to fully quit and reopen the client"
       ]
     },
     {
       "id": 2,
-      "prompt": "I just installed the tarvis plugin but there are no tarvis tools",
-      "expected_output": "Recognised as an unpaired client and taken through pairing.",
+      "prompt": "I installed the Tarvis plugin but there are no tools yet. My workspace is https://oak.tarvis.site",
+      "expected_output": "Recognized as an unpaired client and taken through Tailscale-backed workspace pairing.",
       "expectations": [
-        "Does not treat the missing tools as a plugin installation fault",
-        "Runs discovery rather than asking for the device address first",
-        "Ends with a configured MCP server and a restart instruction"
+        "Does not treat missing MCP tools as a plugin installation fault",
+        "Uses https://oak.ts.tarvis.site rather than local-network discovery",
+        "Checks VPN, Tailscale, and health before requesting access",
+        "Ends with a configured MCP server and restart instruction"
       ]
     },
     {
       "id": 3,
-      "prompt": "every tarvis tool says unauthorized now",
-      "expected_output": "Treated as a revoked or expired token and re-paired.",
+      "prompt": "Every Tarvis tool says unauthorized now; reconnect my https://war.tarvis.site workspace",
+      "expected_output": "The revoked or expired token replaced through a fresh browser-approved pairing request.",
       "expectations": [
-        "Identifies that the existing token no longer works rather than re-probing the network only",
+        "Identifies the existing token as revoked or expired",
         "Requests a fresh grant instead of reusing the old request id",
-        "Replaces the configured server rather than adding a second one"
+        "Replaces the configured server rather than adding a duplicate",
+        "Keeps login credentials in the browser and never asks for them in chat"
       ]
     },
     {
       "id": 4,
-      "prompt": "pair the device, I'll approve it in the browser",
-      "expected_output": "Pairing driven to the approval page, then completed from the code the user reads back.",
+      "prompt": "Pair my workspace; open the authorization page for me",
+      "expected_output": "The user is asked for the workspace URL, guided through Tailscale, and sent to the generated private approval page before code exchange.",
       "expectations": [
-        "Hands over approve_url rather than asking for the admin password",
-        "Keeps the request id from the saved response instead of retyping an abbreviated one",
-        "Exchanges the code promptly and does not print the token"
+        "Asks for the base workspace URL before deriving its .ts origin",
+        "Rewrites approve_url onto the .ts workspace origin while preserving its path and query",
+        "Attempts to open the URL locally and also leaves it visible for manual opening",
+        "Keeps the request id from the saved response",
+        "Exchanges the code promptly without printing the token"
       ]
     }
   ]
