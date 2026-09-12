@@ -14,6 +14,9 @@ inspect the catalog and report the missing capability.
 
 Commands run inside the session sandbox. These tools do not provide a host shell.
 Memory use and startup time vary by runtime, agent and workload.
+Start with `coding_sessions` for existing work and call `workspace_resources`
+before creating or waking a session. Respect its admission result; unknown
+metrics are not available capacity.
 
 ## The tools
 
@@ -22,7 +25,12 @@ Memory use and startup time vary by runtime, agent and workload.
   device. Do this before the first `start` for a given agent. Optional fields:
   `headless` (a non-interactive command template for scheduled tasks, with
   `{prompt}` replaced per run) and `resume` (a flag appended on wake so the
-  agent restores its conversation — `--continue` for Claude Code).
+  agent restores its conversation — `--continue` for Claude Code). A `base`
+  preset can supply standard commands. For API-backed OpenCode agents, set
+  `base: opencode`, a `provider` (`id`, `key_env`, and optional `npm` and
+  `base_url`), a bare `model`, and optional `reasoning`; keep the provider key
+  in `env`. The built-in `tarvis` agent is workspace-managed and cannot be
+  changed or used as a coding-session agent.
 - `coding_agent_start` — create a workspace, clone a repo, and launch the agent.
 - `coding_sessions` — list sessions, including saved ones that survived a
   device restart.
@@ -30,8 +38,8 @@ Memory use and startup time vary by runtime, agent and workload.
 - `coding_agent_send` — type into a session (answering a prompt, giving an instruction).
 - `coding_agent_wait` — block until a session settles, which is the default;
   pass `status: "working"` to return as soon as output starts instead.
-- `coding_agent_sleep` / `coding_agent_wake` — park a session's VM to free RAM
-  and bring it back later.
+- `coding_agent_sleep` / `coding_agent_wake` — park a session's sandbox to free
+  RAM and bring it back later.
 - `coding_session_model` — change an existing session's model using `name`
   and `model`; choose from `agent_models`.
 - `coding_session_restart` — restart by `name` to pick up changed environment
@@ -68,8 +76,8 @@ Give it a `name` (the workspace key), the configured `agent`, and optionally a
 `repo` and `branch`. Use `git_branches` to choose the intended branch; do not
 assume the repository uses `master`.
 
-**The reply tells you what actually happened**, because the VM writes its own
-status: *ready* means git, the clone and the agent are all up and you can start
+**The reply tells you what actually happened**, because the sandbox writes its
+own status: *ready* means git, the clone and the agent are all up and you can start
 working; *still provisioning* means it needs longer, so `coding_agent_wait`
 then read; an error carries the failing output from the pane. Don't treat a
 start as done until it says ready.
@@ -89,8 +97,9 @@ a restart of the same name — reuse the name to resume, pick a new one for
 isolated work. `workspace` points a session at someone else's workspace, which
 is how you log a scheduled task's agent in.
 
-`memory_mb` and `cpus` size the VM (2 CPUs and ~3 GB by default); `ephemeral`
-throws the workspace away when the session ends.
+`memory_mb` and `cpus` request the session's resource budget (2 CPUs and about
+3 GB by default); the runtime applies those limits according to its isolation
+mode. `ephemeral` throws the workspace away when the session ends.
 
 ## Running one command instead of an agent
 
@@ -146,10 +155,11 @@ sit on a prompt or a private clone fail.
 approves in their browser, poll `git_status` until connected. Other hosts
 (GitLab, Bitbucket, Gitea, self-hosted) take a personal access token the user
 enters in the device admin panel; never ask for a token in chat. Once
-connected, every VM has working git: `~/.config/tarvis/git-hosts.json` lists
+connected, every session has working git: `~/.config/tarvis/git-hosts.json` lists
 the hosts, the matching CLI (gh, glab, tea) is installed and token env vars
 are set, so use the provider's own commands for PRs. Private repos then clone
-straight from the `repo` argument.
+straight from the `repo` argument. Use `git_disconnect` only when the user asks
+to revoke a connected host.
 
 **The agent.** Configure it with `login_paths` (for Claude Code:
 `.claude/.credentials.json` and `.claude.json`), start a session, and relay

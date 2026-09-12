@@ -6,6 +6,7 @@
             "prompt": "start claude code on the device against git@github.com:acme/api.git and have it look at the failing tests",
             "expected_output": "A VM session started with the repo cloned over https, and the instruction relayed to the agent.",
             "expectations": [
+                "Checks workspace_resources before starting and respects its admission result",
                 "Rewrites the SSH remote to an https:// URL before calling coding_agent_start",
                 "Explains why SSH cannot be used from the VM",
                 "Passes a session name",
@@ -86,7 +87,7 @@
             "expected_output": "github_connect code and URL relayed; status polled until connected.",
             "expectations": [
                 "Calls github_connect and relays user_code + verification_url to the user",
-                "Polls github_status rather than assuming approval",
+                "Polls git_status rather than assuming approval",
                 "Never asks the user to paste a token"
             ]
         },
@@ -95,7 +96,7 @@
             "prompt": "do I have to sign claude in every time I start a session on the box?",
             "expected_output": "No: one login per device via the saved-login seed; explains the save flow.",
             "expectations": [
-                "Explains logins persist per workspace automatically",
+                "Explains configured login files are saved per agent and seeded into later sessions",
                 "Offers coding_agent_save_login after a first sign-in so new sessions start authenticated",
                 "Configures login_paths on the agent when missing"
             ]
@@ -108,6 +109,16 @@
                 "Uses coding_session_delete with name=fixer",
                 "Explains a shared workspace remains for its other session",
                 "Does not offer deleting only the session record as a way to preserve resumable work"
+            ]
+        },
+        {
+            "id": 12,
+            "prompt": "Configure an OpenRouter coding agent on the workspace using GLM 5.3 Flash with high reasoning.",
+            "expected_output": "An OpenCode-based agent configured with a discovered provider/model and a securely stored key.",
+            "expectations": [
+                "Uses provider_list/provider_models before configuration rather than inventing the provider or model identifier",
+                "Uses coding_agent_configure with base=opencode, provider id/key_env, a bare model name, and reasoning=high",
+                "Stores the API key in the agent env without echoing it and does not try to modify the built-in tarvis agent"
             ]
         }
     ],
