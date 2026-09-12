@@ -7,6 +7,7 @@
             "expected_output": "The app installed from the Coolify template, with its URL and generated credentials relayed to the user.",
             "expectations": [
                 "Calls device_status first to see what already runs",
+                "Calls workspace_resources before installing and respects its admission result",
                 "Uses app_install with the template slug rather than writing compose by hand",
                 "Relays the returned URL and one-time credentials to the user immediately",
                 "Does not declare failure on a slow first start without checking app_list or app_logs"
@@ -155,6 +156,46 @@
                 "Uses agent_models for the configured agent",
                 "Uses git_repos and git_branches with the connected host",
                 "Does not request a new API key for an already configured agent"
+            ]
+        },
+        {
+            "id": 17,
+            "prompt": "Install this Drone runner compose; its runner declares a container engine so it can launch build jobs.",
+            "expected_output": "The compose is installed with the workspace's managed app-private container capability.",
+            "expectations": [
+                "Submits the compose through app_install and lets the workspace provide its managed isolated capability",
+                "Does not add privileged mode, a nested daemon, or host-engine access",
+                "Explains that the capability follows the app lifecycle without exposing internal implementation details"
+            ]
+        },
+        {
+            "id": 18,
+            "prompt": "My nightly task needs to log into the installed inventory app and keep the returned API token without showing it.",
+            "expected_output": "The task calls the internal app API and saves the token directly into encrypted task credentials.",
+            "expectations": [
+                "Uses task_secret_list to discover existing task credential names",
+                "Uses app_request with secret references for login inputs",
+                "Uses app_request save_response for the returned token instead of printing it or copying it through chat"
+            ]
+        },
+        {
+            "id": 19,
+            "prompt": "Send my general Tarvis chat: build an expense tracker in a new project.",
+            "expected_output": "The request is sent to the general chat, which can hand implementation to one separate Code session.",
+            "expectations": [
+                "Uses chat_send rather than directly invoking the chat-internal continue_in_code tool",
+                "Recognizes the handoff keeps the original general chat and creates a separate coding session using the same agent/model",
+                "Does not create a duplicate second session when the handoff is repeated"
+            ]
+        },
+        {
+            "id": 20,
+            "prompt": "The watcher found two pending listings, sent one alert, then notification delivery failed on the other.",
+            "expected_output": "Only successfully processed and delivered items are acknowledged; failed delivery remains pending.",
+            "expectations": [
+                "Treats task_memory_new results as pending until acknowledged",
+                "Calls task_memory_ack only for the item whose required delivery succeeded",
+                "Leaves the failed item unacknowledged for retry"
             ]
         }
     ]

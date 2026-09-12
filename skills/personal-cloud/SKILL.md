@@ -17,6 +17,9 @@ chat/task tokens and domain-scoped tokens do not expose `chat_*`.
 **Start with `device_status`.** For VM-scoped tokens it inventories what the
 box is already running — hosted apps with URLs, scheduled tasks with their
 last outcome, coding sessions — so you have context before adding anything.
+Before installing or starting an app, call `workspace_resources` and respect
+its admission result. Unknown resource metrics are not spare capacity, and its
+generic estimates do not replace an app's documented requirements.
 
 ## Two URLs per service
 
@@ -44,8 +47,9 @@ device sanitizes it, allocates ports, generates passwords, and runs it
 with restart-on-boot persistence. The app's `name` becomes its subdomain, so
 keep it a short lowercase label. Data lives on the encrypted data partition.
 
-- `app_catalog` — curated slugs installable offline. Any other slug from
-  Coolify's service directory (github.com/coollabsio/coolify,
+- `app_catalog` — curated slugs installable offline. Use `query`, `offset` and
+  `limit` for targeted or paged discovery, following `has_more`. Any other slug
+  from Coolify's service directory (github.com/coollabsio/coolify,
   templates/compose) works too when the device has internet.
 - `app_install` — `name` plus either `template` (a slug) or `compose` (YAML
   you write). Returns `url` / `tailscale_url` and any generated credentials —
@@ -54,6 +58,12 @@ keep it a short lowercase label. Data lives on the encrypted data partition.
   while the app itself may still be migrating a database. Poll the URL until
   it answers 200 before you cast it to a screen or hand it over.
 - `app_list` / `app_start` / `app_stop` / `app_logs` / `app_remove`.
+- `app_request` calls an installed app's HTTP API internally without going
+  through browser SSO. The app's own authentication still applies. In task
+  calls, headers can use `${ENV_NAME}` and JSON values can use
+  `{"$secret":"ENV_NAME"}`. Prefer `save_response` for login/token responses
+  so selected fields are encrypted as task secrets without entering messages
+  or logs. Redirects are returned rather than followed and responses are capped.
 - `app_compose_get` reads the current compose and `env_keys` (variable names
   only). It omits all `.env` values; preserve `${NAME}` references when editing.
   `app_update` changes
@@ -69,9 +79,24 @@ keep it a short lowercase label. Data lives on the encrypted data partition.
   See Backups below for configuration, schedules and restores.
 
 Writing compose yourself: images or `build: {context: ./src}` using source
-fetched with `app_source_fetch`; no privileged containers,
-no host paths — bind mounts must be relative (they land in the app's own data
-dir), named volumes are fine. Published ports are reallocated by the device;
+fetched with `app_source_fetch`; no privileged containers and no ordinary host
+paths — bind mounts must be relative (they land in the app's own data dir), and
+named volumes are fine. Supported workspaces recognize a CI runner's standard
+container-engine declaration and provide an isolated, app-scoped capability.
+If a runner needs that capability later without declaring it in Compose,
+identify only the consumer service:
+
+```yaml
+x-tarvis:
+  capabilities:
+    container_engine:
+      services: [runner]
+```
+
+The managed capability follows the app lifecycle. Do not add a nested daemon,
+privileged mode, or host-engine access. If the workspace does not accept the
+capability, report that limitation rather than weakening the Compose.
+Published ports are reallocated by the device;
 the install result tells you where the app actually listens. `app_remove`
 keeps data unless `purge: true` — confirm purge with the user first.
 
@@ -121,8 +146,11 @@ a device with a screen.
   `schedule: interval` with `interval_minutes` (minimum 5), or `schedule: daily`
   with `daily_at` (`HH:MM`) and `timezone`. The default is hourly. Omit `agent`
   to use the built-in agent when available; other agents need a configured
-  headless command via `coding_agent_configure`.
-- Creation queues a first run automatically. Do not immediately call
+  headless command via `coding_agent_configure`. Put credential names the task
+  will need in `required_secrets`; creation succeeds but execution waits while
+  any are missing, and the task's Secrets UI attaches them when supplied.
+- Creation queues a first run automatically once required credentials are
+  available. Do not immediately call
   `task_run_now` as an extra setup step. `enabled: false` pauses scheduled
   runs; it is not a guarantee that creation performs no work.
 - `task_update` changes supplied fields; `enabled: false` pauses the schedule.
@@ -144,9 +172,19 @@ a device with a screen.
 - `task_files`, `task_file_read` and `task_file_write` access the persistent
   task workspace by `name` and relative `path`. Writes also take `content`.
   A run sees files at `/workspace/<path>`; your local filesystem is separate.
-- `task_memory_new` remembers observed items and returns new or changed ones.
-  `task_memory_get` / `task_memory_set` retain arbitrary JSON across runs;
-  inspect the tool schema for their fields.
+- `task_memory_new` returns new, changed, and previously unacknowledged items.
+  They stay pending across failures and retries. Call `task_memory_ack` with
+  the same ID-to-value entries only after all required processing and delivery
+  succeeds; never acknowledge merely because items were fetched. Use
+  `task_memory_get` / `task_memory_set` for other persistent JSON.
+- `task_secret_list` lists credential names assigned to the current task, never
+  their values. `task_secret_set` stores a credential for that task only. For
+  API login responses, prefer `app_request.save_response` so the credential is
+  encrypted without appearing in a message or log.
+- `task_instructions_correct` is available only inside a task run. Use it to
+  replace one exact instruction passage after a successful operation proves
+  the correction. Preserve the owner's goal, schedule, delivery and secret
+  references; never persist a guess, temporary outage, or credential value.
 
 Task workspaces retain `/workspace/.home` between runs. For a logged-in site,
 an interactive coding session can share the task's workspace so the user can
@@ -158,8 +196,8 @@ complete login once and future runs retain it.
 `target` selects one named app/task/session; omit it for every resource in that
 domain, including future ones. Set the narrow target the user intends.
 
-`secret: true` is the default: encrypted at rest, omitted from `secret_list`,
-and redacted in run logs. This is not isolation from an agent authorized to
+`secret: true` is the default: encrypted at rest, with its value omitted from
+`secret_list`, and redacted in run logs. This is not isolation from an agent authorized to
 read app configuration or execute code in a runtime receiving that secret.
 `app_compose_get` omits `.env` values and returns their names only. Compose YAML
 is returned as written, so credentials manually embedded in YAML remain visible. Never echo the submitted value. `secret: false` stores a var whose
@@ -167,6 +205,13 @@ value is visible through `secret_list` and in logs. `secret_list` reports names,
 domains, targets and secrecy flags; only vars return values. `secret_delete`
 removes an entry by name. Setting or deleting app configuration reloads affected
 apps automatically; tasks pick it up on their next run, sessions on restart.
+
+A secret entered through a chat's Secrets UI belongs to that chat, is saved
+before its first message, and is injected into its turns without exposing the
+value in history. Inside the owning chat, `secret_assign` can copy it to one
+named app, task, or coding session without reading the value. Reassign it after
+rotation. Only the owning device chat can call `secret_assign`; external paired
+clients cannot invoke it directly.
 
 ## Backups
 
@@ -238,6 +283,8 @@ configure the chosen agent using `coding_agent_configure`.
 repositories, reporting partial host failures alongside successful results.
 `git_branches` takes `host` and `repo` (owner/project). Use these to select a
 real source branch before fetching app source or starting a coding session.
+`git_disconnect` removes one connected host only when the user asks to revoke
+that connection.
 
 ## Device assistant chats
 
@@ -266,6 +313,14 @@ without needing a chat turn.
 - `chat_cancel` stops the current turn and clears queued messages, retaining
   history. `chat_delete` removes history and a general chat's scratch workspace;
   a coding session's workspace stays. Fixed Apps and Tasks chats cannot be deleted.
+- A general chat uses `continue_in_code` when the user asks it to implement an
+  application or feature, fix code, or load a repository. It creates a separate
+  coding session with the same agent/model, securely copies chat-scoped secrets
+  and recent attachments, queues a self-contained implementation brief, and
+  switches the user to Code. The original chat remains a normal chat and is not
+  duplicated in the Code list. Repeated handoff calls return the same destination.
+  This is an internal tool of the owning chat; an external paired client sends
+  the request with `chat_send` and observes the resulting handoff/history.
 
 ## Clients without MCP tool access
 

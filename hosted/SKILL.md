@@ -88,15 +88,24 @@ over again.
 
 For any other client, put `<mcp_url>` and that same header in its MCP config.
 
-Then confirm the device answers with the token:
+Then complete the MCP handshake and confirm the device advertises tools:
 
 ```bash
 curl -fsS -X POST <mcp_url> -H "Authorization: Bearer <token>" \
   -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+
+curl -fsS -X POST <mcp_url> -H "Authorization: Bearer <token>" \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}'
+
+curl -fsS -X POST <mcp_url> -H "Authorization: Bearer <token>" \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 ```
 
-A healthy device returns tens of tools. Tell the user to **fully quit and
+A successful initialized notification returns HTTP 202 with no body. A healthy
+device returns its token-scoped tool catalog. Tell the user to **fully quit and
 reopen** their client — a reload does not pick up new MCP servers.
 
 Then get the skills. The tools alone leave an agent guessing at things the
@@ -112,7 +121,21 @@ the user these two lines to run (slash commands are typed by them, not by you):
 Other clients get the tools only, which works — the skills are guidance, not a
 dependency. Skip this step if `tarvis` is already installed there.
 
-## 5. When something fails
+## 5. Disconnecting
+
+When the user asks to remove this connection, first remove the MCP server from
+their client, then revoke only this bearer:
+
+```bash
+curl -fsS -X POST <device>/api/agent/v1/logout \
+  -H "Authorization: Bearer <token>"
+```
+
+Delete `/tmp/tarvis-req.json`, `/tmp/tarvis-cookies`, and any temporary token
+file created during pairing. Logging out is destructive to this connection, so
+do not do it as routine setup cleanup.
+
+## 6. When something fails
 
 - **nothing answers discovery** — they are on a different network, or mDNS is
   blocked (usual on guest and corporate WiFi). Ask for the address on the TV.
